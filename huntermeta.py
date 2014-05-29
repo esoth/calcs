@@ -1,0 +1,12 @@
+class HunterMeta(object):
+  """ Some meta info that can't go into a Hunter object due to
+      recursion problems
+      
+      Hunter has (1) meta (2) stats.
+      The meta object is passed to the stats
+      The hunter object is passed to spell methods
+  """
+  race = 'Night Elf'
+  talentstr = '0000000'
+  spec = 0 # 0=BM, 1=MM, 2=SV
+  glyphs = []
