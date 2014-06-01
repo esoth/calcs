@@ -11,65 +11,120 @@ class Documentable(Calc):
         on a page """
   value = 0.0
   formula = 'a generic formula'
+  descriptions = {}
 
 class Spell(Calc):
-  weapon = 0.0 # a coefficient
-  ap = 0.0 # a coefficient
-  critchance = 0 # in addition to base crit, such as from a spell
-  critmod = 0 # in addition to the base 200%
-  armor = 0 # mitigating modifier
-  buff = 0 # probably either physical or magical
-  casttime = 2
-  spec = 0 # any special modifier
-  focus = 0 # focus cost
-  cd = 0
+  _weapon = 0.0 # a coefficient
+  _ap = 0.0 # a coefficient
+  _critchance = 0 # in addition to base crit, such as from a spell
+  _critmod = 0 # in addition to the base 200%
+  _armor = 0 # mitigating modifier
+  _buff = 0 # probably either physical or magical
+  _casttime = 2
+  _spec = 0 # any special modifier
+  _focus = 0 # focus cost
+  _cd = 0
+  
+  def weapon(self):
+    return self._weapon
+  def ap(self):
+    return self._ap
+  def critchance(self):
+    return self._critchance
+  def critmod(self):
+    return self._critmod
+  def armor(self):
+    return self._armor
+  def buff(self):
+    return self._buff
+  def casttime(self):
+    return self._casttime
+  def spec(self):
+    return self._spec
+  def focus(self):
+    return self._focus
+  def cd(self):
+    return self._cd
+  
+  def attributes(self):
+    _attributes = []
+    _attributeslist = (('base','Base damage'),
+                       ('weapon','Weapon co.'),
+                       ('ap','AP co.'),
+                       ('totalcritmod','Crit modifier'),
+                       ('armor','Armor mit.'),
+                       ('mastery','Mastery buff'),
+                       ('buff','Buff'),
+                       ('spec','Spec. based mod.'),
+                       ('speed','Cast time'),
+                       ('focus','Focus cost'),
+                       ('cd','Cooldown'),
+                       ('damage','Damage'),
+                       ('dps','DPS'),)
+    
+    for attrid,attrtitle in _attributeslist:
+      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec',)
+      to_double = ('speed','base','damage','dps',)
+      func = getattr(self,attrid)
+      value = getattr(self,attrid)()
+      if attrid in to_pretty:
+        value = pretty(value)
+      elif attrid in to_double:
+        value = '%.02f' % value
+      attr = {'id':attrid,
+              'title':attrtitle,
+              'value':value,}
+      attr['klass'] = u'%s_%s' % (attrid,self.__class__.__name__)
+      if func.func_doc and func.func_doc.strip():
+        attr['description'] = func.func_doc.strip()
+      _attributes.append(attr)
+    return _attributes
   
   def __init__(self, hunter):
     """ Must be initiated with a hunter object """
     self.hunter = hunter
   
-  def damage(self):
-    """ Needs a HunterCalc class to get stats """
-    base = self.hunter.weapondmg() * self.weapon + self.hunter.ap() * self.ap
+  def base(self):
+    """ Base damage from AP and/or Weapon """
+    return self.hunter.weapondmg() * self.weapon() + self.hunter.ap() * self.ap()
     
-    crit_chance = min(self.critchance + critify(self.hunter.crit.total_static()),1)
-    crit_mod = self.critmod + 2.00
-    crit = (crit_mod * crit_chance + (1-crit_chance))
-    dmg = base * crit
+  def totalcritmod(self):
+    """ Takes into account increased crit chance and/or modifier unique to this spell"""
+    crit_chance = min(self.critchance() + self.hunter.crit.total_static()/float(self.hunter.crit.rating())/100.0,1)
+    crit_mod = self.critmod() + 2.00
+    return (crit_mod * crit_chance + (1-crit_chance))
+    
+  def damage(self):
+    dmg = self.base() * self.totalcritmod()
     _mastery = self.mastery()
-    if self.armor:
-      dmg = dmg * self.armor
-    if self.buff:
-      dmg = dmg * self.buff
-    if _mastery:
-      dmg = dmg * _mastery
-    if self.spec:
-      dmg = dmg * self.spec
+    if self.armor():
+      dmg = dmg * self.armor()
+    if self.buff():
+      dmg = dmg * self.buff()
+    if self.mastery():
+      dmg = dmg * self.mastery()
+    if self.spec():
+      dmg = dmg * self.spec()
     _modifiers = self.modifiers()
-    if _modifiers['value']:
-      dmg = dmg * _modifiers['value']
+    if _modifiers:
+      dmg = dmg * _modifiers
     
     # multistrike
-    
-    formula = "(WeaponDamage * %.02f + AP * %.02f) *  %.02fcrit *  %.02farmor * %.02fmastery * %.02fbuff%s" % (self.weapon,
-                self.ap,crit,self.armor or 1.0,_mastery or 1.0, self.buff or 1.0,_modifiers['formula'])
-    return Documentable(value=dmg,formula=formula)
+    return dmg
   
   def modifiers(self):
     """ additional modifiers """
-    return {'value':0,'formula':''}
+    return 0
   
   def mastery(self):
     return 0
   
   def speed(self):
-    """ Needs a HunterCalc class to get stats """
-    hasted = self.casttime/(1+hastify(self.hunter.haste.total_static()))
+    hasted = self.casttime()/(1+self.hunter.haste.total_static()/float(self.hunter.haste.rating())/100.0)
     return max(1.0,hasted)
   
   def dps(self):
-    """ Needs a HunterCalc class to get stats """
-    dmg = self.damage().value
+    dmg = self.damage()
     speed = self.speed()
     return dmg/speed
   
@@ -77,170 +132,142 @@ class Spell(Calc):
     """ We might need to have a special consideration, like a guaranteed crit """
     return self.damage()
 
-class AutoShot(Spell):
-  computable = True
-  name = "Auto Shot"
-  weapon = 1.0
-  ap = 0
-  buff = 1.05
-  armor = armormod()
+class PhysicalSpell(Spell):
+  _armor = armormod()
+  _buff = 1.05
   
-  def modifiers(self):
-    """ additional modifiers """
-    if istalent(self.hunter.meta.talentstr,EXOTICMUNITIONS):
-      return {'value':2.0,'formula':' * 2.0(Poison Ammo)'}
-    else:
-      return super(AutoShot,self).modifiers()
-  
-  def speed(self):
-    """ Needs a HunterCalc class to get stats """
-    hasted = self.hunter.weaponspeed/(1+hastify(self.hunter.haste.total_static()))
-    return hasted
-
-class SVMastery(Spell):
+  def buff(self):
+    """ Physical vulnerability debuff """
+    return super(PhysicalSpell,self).buff()
+    
+class MagicSpell(Spell):
   """ Magic Damage for Survival mastery """
+  _buff = 1.05
+
+  def buff(self):
+    """ Magic vulnerability debuff """
+    return super(MagicSpell,self).buff()
     
   def mastery(self):
+    """ +dmg modifier if Survival """
     if self.hunter.meta.spec == 2: # SV
       base = .08
-      return 1+base+mastify(self.hunter.mastery.total_static())
+      return 1+base+self.hunter.mastery.total_static()/float(self.hunter.mastery.rating())/100.0
     return 0
+    
 
-class ArcaneShot(SVMastery):
+class AutoShot(PhysicalSpell):
+  computable = True
+  name = "Auto Shot"
+  _weapon = 1.0
+  _ap = 0
+  
+  def speed(self):
+    hasted = self.hunter.weaponspeed/(1+self.hunter.haste.total_static()/self.hunter.haste.rating())
+    return hasted
+
+class ArcaneShot(MagicSpell):
   computable = True
   name = "Arcane Shot"
-  weapon = 1.4
-  buff = 1.05
-  casttime = GCD
-  focus = 30
+  _weapon = 1.4
+  _casttime = GCD
+  _focus = 30
 
-class BlackArrow(SVMastery):
+class BlackArrow(MagicSpell):
   computable = True
   name = "Black Arrow"
-  weapon = 0
-  buff = 1.05
-  ap = 1.41858
-  casttime = GCD
-  focus = 35
-  cd = 30
-  spec = 1.3 # trap mastery
+  _weapon = 0
+  _ap = 1.41858
+  _casttime = GCD
+  _focus = 35
+  _cd = 30
+  _spec = 1.3 # trap mastery
+  
+  def spec(self):
+    """ Trap mastery """
+    return self._spec
 
-class ChimeraShot(Spell):
+class ChimeraShot(MagicSpell):
   computable = True
   name = "Chimera Shot"
-  weapon = 1.9
-  buff = 1.05
-  casttime = GCD
-  focus = 45
-  cd = 9
+  _weapon = 1.9
+  _casttime = GCD
+  _focus = 45
+  _cd = 9
 
-class AimedShot(Spell):
+class AimedShot(PhysicalSpell):
   computable = True
   name = "Aimed Shot"
-  weapon = 2.55
-  buff = 1.05
-  armor = armormod()
-  casttime = 2.5
-  focus = 50
+  _weapon = 2.55
+  _casttime = 2.5
+  _focus = 50
   
-class CobraShot(SVMastery):
+class CobraShot(MagicSpell):
   computable = True
   name = "Cobra Shot"
-  weapon = 0.35
-  buff = 1.05
-  casttime = 2
-  focus = -14
+  _weapon = 0.35
+  _casttime = 2
+  _focus = -14
   
-class ExplosiveShot(SVMastery):
+class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  ap = .8 * 3
-  buff = 1.05
-  casttime = GCD
-  focus = 25
-  cd = 6
+  _ap = .8 * 3
+  _casttime = GCD
+  _focus = 25
+  _cd = 6
 
-class KillShot(Spell):
+class KillShot(PhysicalSpell):
   computable = True
   name = "Kill Shot"
-  weapon = 4.75
-  buff = 1.05
-  casttime = GCD
-  cd = 10
+  _weapon = 4.75
+  _casttime = GCD
+  _cd = 10
 
-class KillCommand(Spell):
+class KillCommand(PhysicalSpell):
   computable = True
   name = "Kill Command"
 
-class MultiShot(Spell):
+class MultiShot(PhysicalSpell):
   computable = True
   name = "Multi-Shot"
 
-class SerpentSting(Spell):
+class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
 
-class SteadyShot(Spell):
+class SteadyShot(PhysicalSpell):
   computable = True
   name = "SteadyShot"
   
-class ExplosiveTrap(Spell):
+class ExplosiveTrap(MagicSpell):
   computable = True
   name = "Explosive Trap"
 
-class Barrage(Spell):
+class Barrage(PhysicalSpell):
   computable = True
   name = "Barrage"
 
-class Powershot(Spell):
+class Powershot(PhysicalSpell):
   computable = True
   name = "Powershot"
 
-class MurderOfCrows(Spell):
+class MurderOfCrows(PhysicalSpell):
   computable = True
   name = "A Murder of Crows"
 
-class BearTrap(Spell):
+class BearTrap(PhysicalSpell):
   computable = True
   name = "Bear Trap"
 
-class FocusingShot(Spell):
+class FocusingShot(PhysicalSpell):
   computable = True
   name = "FocusingShot"
-  weapon = 1.00
-  buff = 1.05
-  casttime = 3
-  focus = -50
-  
-def pretty(value):
-  if not value:
-    return ''
-  if isinstance(value,float):
-    return '%.02f%%' % value
-  else:
-    return value
-  
-def build_spell(spell):
-  spell = {'name':       spell.name,
-           'damage':     '%.02f' % spell.damage().value,
-           'speed':      '%.02f' % spell.speed(),
-           'dps':        '%.02f' % spell.dps(),
-           'weapon':     pretty(spell.weapon),
-           'ap':         pretty(spell.ap),
-           'critchance': pretty(spell.critchance),
-           'critmod':    pretty(spell.critmod),
-           'armor':      pretty(spell.armor),
-           'buff':       pretty(spell.buff),
-           'casttime':   spell.casttime,
-           'spec':       pretty(spell.spec),
-           'focus':      spell.focus,
-           'cd':         spell.cd,
-           'formula':    spell.damage().formula,
-          }
-  # make pretty
-  for k,v in spell.items():
-    spell[k] = pretty(v)
-  return spell
+  _weapon = 1.00
+  _casttime = 3
+  _focus = -50
+
+
 
 def do_spells(meta, hunter):
   spelltable = []
@@ -249,5 +276,6 @@ def do_spells(meta, hunter):
     
   for name,klass in _spells:
     spell = klass(hunter)
-    spelltable.append(build_spell(spell))
+    spelltable.append({'name':spell.name,
+                       'attributes':spell.attributes()})
   return spelltable

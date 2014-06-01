@@ -1,17 +1,5 @@
-CRIT = 600 # level 90
-HASTE = 500 # level 90
-MASTERY = 600 # level 90
-
-def critify(value):
-  return value/CRIT/100
-
-def hastify(value):
-  return value/HASTE/100
-
-def mastify(value):
-  return value/MASTERY/100
-  
 def armormod():
+  """ 1-24836/(24836+46203.33) """
   base = 24835
   return 1-base/(base+46203.33)
   
@@ -89,3 +77,24 @@ def istalent(talentstr,talent): # talentstr is 6 digits of numbers 0-2
   for i in range(0,len(talentstr)):
     _talents.append(TALENTS[i][int(talentstr[i])])
   return talent in _talents
+
+import json
+from urllib import urlopen
+REGIONS = (('eu','EU'),('us','US'))
+SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('http://us.battle.net/api/wow/realm/status'))['realms']]
+for r in json.load(urlopen('http://eu.battle.net/api/wow/realm/status'))['realms']:
+  if (r['slug'],r['name']) not in SERVERS:
+    SERVERS.append((r['slug'],r['name']))
+  
+def pretty(value,percent=True):
+  if not value:
+    return '--'
+  elif percent:
+    value *= 100
+    
+  if isinstance(value,float):
+    if value < 0.01: # float rounding errors, blech
+      return '--'
+    return '%.02f%s' % (value,percent and '%' or '')
+  else:
+    return value

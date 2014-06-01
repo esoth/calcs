@@ -1,5 +1,5 @@
 from hunter import HunterMeta
-from tools import critify, hastify, mastify, PANDARENS
+from tools import PANDARENS
 
 class Calc(object):
   def __init__(self, **kw):
@@ -16,13 +16,14 @@ class Stat(object):
   procs = []
   
   # defaults - always call the method, but default the methods just return these
-  _gear = 0.0
-  _food = 0.0
-  _flask = 0.0
-  _buffa = 0.0
-  _basea = 0.0
-  _buffm = 0.0
-  _spec = 0.0
+  _gear = float(0)
+  _food = float(0)
+  _flask = float(0)
+  _buffa = float(0)
+  _basea = float(0)
+  _buffm = float(0)
+  _spec = float(0)
+  _rating = 1 # rating/1% ratio
   
   def __init__(self,hunter):
     if isinstance(hunter,HunterMeta):
@@ -66,6 +67,12 @@ class Stat(object):
       self._spec = value
     else:
       return self._spec
+  def rating(self,value=''):
+    """ Level 90 values """
+    if value:
+      self._rating = value
+    else:
+      return self._rating
   
   def additives(self):
     return max(self.gear(), self.food(), self.flask(), self.buffa(), self.basea(),0) # could theoretically be negative otherwise
@@ -93,7 +100,23 @@ class AgilityStat(Stat):
   _buffm = 0.05
   _spec = 0.05
   
+  def rating(self):
+    return '--'
+  
+  def basea(self):
+    """ To do: get a proper list of starting stats per race """
+    return super(AgilityStat,self).basea()
+  
+  def spec(self):
+    """ 5% agility for wearing mail armor """
+    return super(AgilityStat,self).spec()
+  
+  def flask(self):
+    """ Flask of Spring Blossoms """
+    return super(AgilityStat,self).flask()
+  
   def food(self):
+    """ Pandarens receive double """
     return self.hunter.race in PANDARENS and 600 or 300 # Pandaren
   
   def additives(self):
@@ -104,35 +127,63 @@ class AgilityStat(Stat):
 
 class CritStat(Stat):
   """ Buffs, agi class bonus, boss crit depression """
-  _buffa = critify(100/5.0)**-1
-  _basea = critify(100/5.2)**-1 # -4.8% boss depression, 10% base crit
-  _spec = .1 # base 10% crit for hunters
+  _rating = 600
+  _buffa = _rating * 5
+  _basea = _rating * (10 - 4.8) # -4.8% boss depression
+  
+  def buffa(self):
+    """ 5% crit buff """
+    return super(CritStat,self).buffa()
+  
+  def basea(self):
+    """ Crit depression for +3 boss levels - does this still apply? Also 10% crit for agi users"""
+    return super(CritStat,self).basea()
 
 class HasteStat(Stat):
   """ 5% haste buff """
-  _buffa = hastify(100/5.0)
+  _rating = 500
+  _buffa = _rating * 5
+  
+  def buffa(self):
+    """ 5% haste buff """
+    return super(HasteStat,self).buffa()
 
 class MasteryStat(Stat):
   """ 5% mastery buff """
-  _buffa = mastify(100/5.0)
+  _rating = 600
+  _buffa = _rating * 5
+  
+  def buffa(self):
+    """ 5% mastery buff """
+    return super(MasteryStat,self).buffa()
 
 class ReadinessStat(Stat):
   """ Assuming this defaults to zero for now """
+  _rating = 600
+  
+  def rating(self):
+    """ Placeholder """
+    return super(ReadinessStat,self).rating()
 
 class MultistrikeStat(Stat):
   """ Assuming this defaults to zero for now """
+  _rating = 600
+  
+  def rating(self):
+    """ Placeholder """
+    return super(MultistrikeStat,self).rating()
 
 class Proc(Calc):
   rppm = 1.0
-  magnitude = 0.0
-  duration = 0.0
+  magnitude = float(0)
+  duration = float(0)
   static_haste = 1.0
   
   def average(self):
     return self.magnitude*self.rppm/(6.0/self.static_haste)
   
   def uptime(self):
-    return 0.0
+    return float(0)
 
 class ProcManager(object):
   agility = []
