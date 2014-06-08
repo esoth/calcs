@@ -6,7 +6,6 @@ class Hunter(object):
   weaponmin = 0
   weaponmax = 0
   weaponspeed = 3
-  procm = ProcManager()
   
   def __init__(self):
     self.meta = HunterMeta()
@@ -14,7 +13,7 @@ class Hunter(object):
     self.crit = CritStat(self.meta)
     self.haste = HasteStat(self.meta)
     self.mastery = MasteryStat(self.meta)
-    self.readiness = ReadinessStat(self.meta)
+    self.versatility = VersatilityStat(self.meta)
     self.multistrike = MultistrikeStat(self.meta)
   
   def do_stats(self):
@@ -30,7 +29,7 @@ class Hunter(object):
                 ('crit','Critical Strike'),
                 ('haste','Haste'),
                 ('mastery','Mastery'),
-                ('readiness','Readiness'),
+                ('versatility','Versatility'),
                 ('multistrike','Multistrike'),]
     
     _stats = []
@@ -97,3 +96,7 @@ class Hunter(object):
   def ap(self):
     """ Currently using a 5% AP boost - is this right? """
     return self.agility.total_static()*1.05
+  
+  def focus_gen(self):
+    """ Base focus generation - 4 * haste """
+    return (1 + self.haste.total_static()/self.haste.rating()/100)*4.0

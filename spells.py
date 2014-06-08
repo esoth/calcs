@@ -5,6 +5,12 @@ from tools import *
 from stats import Calc
 
 GCD = 1
+BM_MASTERY_BASE = .16
+MM_MASTERY_BASE = .168
+SV_MASTERY_BASE = .08
+BM_MASTERY_SCALAR = 2
+MM_MASTERY_SCALAR = 2
+SV_MASTERY_SCALAR = 1
 
 class Documentable(Calc):
   """ Contains a value and a formula. The formula is a textual output to be displayed
@@ -24,6 +30,7 @@ class Spell(Calc):
   _spec = 0 # any special modifier
   _focus = 0 # focus cost
   _cd = 0
+  _duration = 0
   
   def weapon(self):
     return self._weapon
@@ -45,12 +52,14 @@ class Spell(Calc):
     return self._focus
   def cd(self):
     return self._cd
+  def duration(self):
+    return self._duration
   
   def attributes(self):
     _attributes = []
-    _attributeslist = (('base','Base damage'),
-                       ('weapon','Weapon co.'),
+    _attributeslist = (('weapon','Weapon co.'),
                        ('ap','AP co.'),
+                       ('base','Base damage'),
                        ('totalcritmod','Crit modifier'),
                        ('armor','Armor mit.'),
                        ('mastery','Mastery buff'),
@@ -105,9 +114,8 @@ class Spell(Calc):
       dmg = dmg * self.mastery()
     if self.spec():
       dmg = dmg * self.spec()
-    _modifiers = self.modifiers()
-    if _modifiers:
-      dmg = dmg * _modifiers
+    if self.modifiers():
+      dmg = dmg * self.modifiers()
     
     # multistrike
     return dmg
@@ -151,10 +159,13 @@ class MagicSpell(Spell):
   def mastery(self):
     """ +dmg modifier if Survival """
     if self.hunter.meta.spec == 2: # SV
-      base = .08
-      return 1+base+self.hunter.mastery.total_static()/float(self.hunter.mastery.rating())/100.0
+      base = SV_MASTERY_BASE
+      return 1+base+self.hunter.mastery.total_static()/float(self.hunter.mastery.rating())/100.0*SV_MASTERY_SCALAR
     return 0
-    
+
+class NoneSpell(Spell):
+  name = "Pass"
+  _casttime = GCD
 
 class AutoShot(PhysicalSpell):
   computable = True
@@ -172,6 +183,12 @@ class ArcaneShot(MagicSpell):
   _weapon = 1.4
   _casttime = GCD
   _focus = 30
+
+class BestialWrath(Spell):
+  name = "Bestial Wrath"
+  _duration = 10
+  _casttime = 0
+  _cd = 100
 
 class BlackArrow(MagicSpell):
   computable = True
@@ -227,6 +244,21 @@ class KillShot(PhysicalSpell):
 class KillCommand(PhysicalSpell):
   computable = True
   name = "Kill Command"
+  _focus = 40
+  _casttime = GCD
+  _cd = 6
+  _ap = 1.575
+  
+  def spec(self):
+    """ Combat Experience """
+    return 1.5
+    
+  def mastery(self):
+    """ +dmg modifier if Survival """
+    if self.hunter.meta.spec == 0: # BM
+      base = BM_MASTERY_BASE
+      return 1+base+self.hunter.mastery.total_static()/float(self.hunter.mastery.rating())/100.0*BM_MASTERY_SCALAR
+    return 0
 
 class MultiShot(PhysicalSpell):
   computable = True

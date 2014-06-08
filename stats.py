@@ -1,4 +1,4 @@
-from hunter import HunterMeta
+from huntermeta import HunterMeta
 from tools import PANDARENS
 
 class Calc(object):
@@ -127,7 +127,7 @@ class AgilityStat(Stat):
 
 class CritStat(Stat):
   """ Buffs, agi class bonus, boss crit depression """
-  _rating = 600
+  _rating = 16
   _buffa = _rating * 5
   _basea = _rating * (10 - 4.8) # -4.8% boss depression
   
@@ -141,7 +141,7 @@ class CritStat(Stat):
 
 class HasteStat(Stat):
   """ 5% haste buff """
-  _rating = 500
+  _rating = 23
   _buffa = _rating * 5
   
   def buffa(self):
@@ -150,24 +150,24 @@ class HasteStat(Stat):
 
 class MasteryStat(Stat):
   """ 5% mastery buff """
-  _rating = 600
+  _rating = 23
   _buffa = _rating * 5
   
   def buffa(self):
     """ 5% mastery buff """
     return super(MasteryStat,self).buffa()
 
-class ReadinessStat(Stat):
+class VersatilityStat(Stat):
   """ Assuming this defaults to zero for now """
-  _rating = 600
+  _rating = 23
   
   def rating(self):
     """ Placeholder """
-    return super(ReadinessStat,self).rating()
+    return super(VersatilityStat,self).rating()
 
 class MultistrikeStat(Stat):
   """ Assuming this defaults to zero for now """
-  _rating = 600
+  _rating = 23
   
   def rating(self):
     """ Placeholder """
@@ -191,7 +191,7 @@ class ProcManager(object):
   crit = []
   mastery = []
   multistrike = []
-  readiness = []
+  versatility = []
   
   def proc_table(self):
     pass
