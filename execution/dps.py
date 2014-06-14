@@ -1,6 +1,7 @@
 from states import *
 from cds import *
 from conditions import *
+from procs import *
 
 
 from calcs.spells import *
@@ -22,6 +23,9 @@ bm_priority = [{'id':'Bestial Wrath',
                {'id':'Arcane Shot',
                 'conditions':[ArcaneShotCondition,],
                 'spell':ArcaneShot},
+               {'id':'Cobra Shot',
+                'conditions':[CobraShotCondition,],
+                'spell':CobraShot},
                {'id':'Pass',
                 'conditions':[NoActionCondition,],
                 'spell':NoneSpell},
@@ -29,12 +33,16 @@ bm_priority = [{'id':'Bestial Wrath',
     
 def runsingle(hunter):
   states = states_computable(hunter)
+  procs = procs_computable(hunter)
   cds = cds_computable(hunter)
   conditions = conditions_computable(hunter)
  
   def update_states(time,action):
+    for k,proc in procs.items():
+      proc.update_state(time,action)
+      procs[k] = proc
     for k,state in states.items():
-      state.update_state(time,action)
+      state.update_state(time,action,procs)
       states[k] = state
     for k,cd in cds.items():
       cd.update_state(time,action)
@@ -44,7 +52,8 @@ def runsingle(hunter):
   time_sum = 0
   dmg_sum = 0
   shot_counts = {}
-  ending_focus = 100
+  max_focus = hunter.meta.spec == 0 and 120 or 100
+  ending_focus = max_focus
   iterations = 200
   for i in range(0,iterations):
     starting_focus = ending_focus
@@ -67,18 +76,20 @@ def runsingle(hunter):
         dmg = spell.damage() * modifiers
        
         focus_passive = time * hunter.focus_gen() * t_modifiers
-        focus_costs = spell.focus() * f_modifiers
+        focus_costs = spell.focus()
+        if focus_costs > 0: # don't make cobra cost more during BW!
+          focus_costs *= f_modifiers
         #if not gcd, calculate passive first and cap at max focus
         if time > 1:
-          ending_focus = min(100,starting_focus + focus_passive) - focus_costs
+          ending_focus = min(max_focus,starting_focus + focus_passive) - focus_costs
         else:
-          ending_focus = min(100,starting_focus + focus_passive - focus_costs)
+          ending_focus = min(max_focus,starting_focus + focus_passive - focus_costs)
 
         table.append({'action':{'iteration':i,
                                 'actionid':spell_id,
                                 'starting_focus':int(starting_focus),
                                 'focus_passive':'%.02f' % focus_passive,
-                                'focus_active':focus_costs,
+                                'focus_active':focus_costs >= 0 and '%.02f' % focus_costs or '+%.02f' % float(abs(focus_costs)),
                                 'dmg':'%.02f' % dmg,
                                 'time':'%.02f' % time,
                                 'totaltime':'%.02f' % time_sum,

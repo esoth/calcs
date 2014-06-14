@@ -98,7 +98,6 @@ class AgilityStat(Stat):
   _flask = 1000
   _basea = 218
   _buffm = 0.05
-  _spec = 0.05
   
   def rating(self):
     return '--'
@@ -106,10 +105,6 @@ class AgilityStat(Stat):
   def basea(self):
     """ To do: get a proper list of starting stats per race """
     return super(AgilityStat,self).basea()
-  
-  def spec(self):
-    """ 5% agility for wearing mail armor """
-    return super(AgilityStat,self).spec()
   
   def flask(self):
     """ Flask of Spring Blossoms """
@@ -129,14 +124,14 @@ class CritStat(Stat):
   """ Buffs, agi class bonus, boss crit depression """
   _rating = 16
   _buffa = _rating * 5
-  _basea = _rating * (10 - 4.8) # -4.8% boss depression
+  _basea = _rating * (10 - 3) # 10=crit for agi users, 3=boss crit suppression
   
   def buffa(self):
     """ 5% crit buff """
     return super(CritStat,self).buffa()
   
   def basea(self):
-    """ Crit depression for +3 boss levels - does this still apply? Also 10% crit for agi users"""
+    """ Crit depression for +3 boss levels (-3%) + 10% crit for agi users"""
     return super(CritStat,self).basea()
 
 class HasteStat(Stat):

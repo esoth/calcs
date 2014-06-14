@@ -54,6 +54,22 @@ class ArcaneShotCondition(Condition):
     checks = [focus >= 70 or (states['Bestial Wrath'].active() and focus >= 20)]
     return False not in checks
 
+class CobraShotCondition(Condition):
+  title = "Cobra Shot condition - true if appropriate spec"
+  id = 'CS'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    return self.hunter.meta.spec != 1
+
+class SteadyShotCondition(Condition):
+  title = "Steady Shot condition - true if appropriate spec"
+  id = 'SS'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    return self.hunter.meta.spec == 1
+
 
 
 import inspect, sys

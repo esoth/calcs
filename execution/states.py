@@ -20,7 +20,7 @@ class State(object):
     return self._focus_modifier
   def duration(self):
     return self._duration
-  def stacks_modifier(self):
+  def stacks(self):
     return self._stacks
   def active(self):
     return self._active
@@ -32,7 +32,7 @@ class State(object):
             'active':self.active(),
             'stacks':self.stacks()}
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,procs):
     pass
 
 # example
@@ -55,9 +55,50 @@ class BestialWrathState(State):
   def focus_modifier(self):
     return self.active() and self._focus_modifier or 1
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,procs):
     if actionid == self.state_id:
       self._duration = BestialWrath(self.hunter).duration() # the behavior of this spell class is outside the scope of this
+      self._active = True
+    else:
+      self._duration -= time
+    if self.duration() < 0:
+      self._active = False
+
+class LockAndLoadState(State):
+  computable = True
+  state_id = 'Lock and Load'
+  _active = False
+  _duration = 10
+  _stacks = 2
+ 
+  # going to need a class of procs to pass here
+  def update_state(self,time,actionid,procs):
+    lnl = procs['Lock and Load']
+    if lnl.activate():
+      self._stacks = 2
+      self._duration = 10
+     
+    if actionid == 'Explosive Shot' and self.stacks():
+      self._stacks -= 1
+ 
+  def active(self):
+    if self.stacks() and self.duration():
+      return True
+
+class RapidFire(State):
+  computable = True
+  state_id = 'Rapid Fire'
+  _time_modifier = 1.4
+  _active = False
+  _duration = 15
+  _stacks = 1
+ 
+  def time_modifier(self):
+    return self.active() and self._time_modifier or 1
+ 
+  def update_state(self,time,actionid,procs):
+    if actionid == self.state_id:
+      self._duration = RapidFire(self.hunter).duration()
       self._active = True
     else:
       self._duration -= time

@@ -26,7 +26,7 @@ class Spell(Calc):
   _critmod = 0 # in addition to the base 200%
   _armor = 0 # mitigating modifier
   _buff = 0 # probably either physical or magical
-  _casttime = 2
+  _casttime = GCD
   _spec = 0 # any special modifier
   _focus = 0 # focus cost
   _cd = 0
@@ -167,6 +167,42 @@ class NoneSpell(Spell):
   name = "Pass"
   _casttime = GCD
 
+class BestialWrath(Spell):
+  name = "Bestial Wrath"
+  _duration = 10
+  _casttime = 0
+  _cd = 100
+
+class RapidFire(Spell):
+  computable = True
+  name = "Rapid Fire"
+  _duration = 15
+  _casttime = 0
+  _cd = 180
+
+class Stampede(Spell):
+  computable = True
+  name = "Stampede"
+  _duration = 20
+  _cd = 300
+
+class Fervor(Spell):
+  computable = True
+  name = "Fervor"
+  _duration = 10
+  _cd = 30
+
+class FocusFire(Spell):
+  computable = True
+  name = "Focus Fire"
+  _duration = 20
+
+class DireBeast(Spell):
+  computable = True
+  name = "DireBeast"
+  _duration = 15
+  _cd = 30
+
 class AutoShot(PhysicalSpell):
   computable = True
   name = "Auto Shot"
@@ -183,12 +219,6 @@ class ArcaneShot(MagicSpell):
   _weapon = 1.4
   _casttime = GCD
   _focus = 30
-
-class BestialWrath(Spell):
-  name = "Bestial Wrath"
-  _duration = 10
-  _casttime = 0
-  _cd = 100
 
 class BlackArrow(MagicSpell):
   computable = True
@@ -226,6 +256,10 @@ class CobraShot(MagicSpell):
   _casttime = 2
   _focus = -14
   
+  def casttime(self):
+    haste = 1+self.hunter.haste.total_static()/self.hunter.haste.rating()/100
+    return self._casttime/haste
+  
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
@@ -237,7 +271,7 @@ class ExplosiveShot(MagicSpell):
 class KillShot(PhysicalSpell):
   computable = True
   name = "Kill Shot"
-  _weapon = 4.75
+  _weapon = 5.5
   _casttime = GCD
   _cd = 10
 
@@ -263,34 +297,64 @@ class KillCommand(PhysicalSpell):
 class MultiShot(PhysicalSpell):
   computable = True
   name = "Multi-Shot"
+  _focus = 40
+  _weapon = .3
+
 
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
+  _ap = 1.256
+  _duration = 15
 
 class SteadyShot(PhysicalSpell):
   computable = True
   name = "SteadyShot"
+  _focus = -14
+  _casttime = 2
+  _weapon = .35
   
 class ExplosiveTrap(MagicSpell):
   computable = True
   name = "Explosive Trap"
 
+class GlaiveToss(PhysicalSpell):
+  computable = True
+  name = "Glaive Toss"
+  _focus = 15
+  _ap = .361 * 4 * 2
+  _cd = 15
+  
+  def ap(self):
+    """ 36.1% * 2 (two glaives) * 4 (primary target). Should it be four hits? """
+    return super(GlaiveToss,self).ap()
+
 class Barrage(PhysicalSpell):
   computable = True
   name = "Barrage"
+  _cd = 40
+  _focus = 30
+  _casttime = 3
+  _weapon = 4.8
 
 class Powershot(PhysicalSpell):
   computable = True
   name = "Powershot"
+  _weapon = 4.5
+  _casttime = 2.25
+  _focus = 15
+  _cd = 45
 
 class MurderOfCrows(PhysicalSpell):
   computable = True
   name = "A Murder of Crows"
-
-class BearTrap(PhysicalSpell):
-  computable = True
-  name = "Bear Trap"
+  _ap = .206 * 30
+  _cd = 120
+  _focus = 60
+  
+  def ap(self):
+    """ I don't actually know the AP on this - placeholder """
+    return super(MurderOfCrows,self).ap()
 
 class FocusingShot(PhysicalSpell):
   computable = True
