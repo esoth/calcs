@@ -9,14 +9,14 @@ class Cooldown:
     return {'actionid':self.actionid,
             'cdtime':self.cdtime}
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     self.cdtime = 0
 
 class BestialWrathCD(Cooldown):
   actionid = 'Bestial Wrath'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import BestialWrath
     if actionid == self.actionid:
       self.cdtime = BestialWrath(self.hunter).cd()
@@ -27,7 +27,7 @@ class KillCommandCD(Cooldown):
   actionid = 'Kill Command'
   computable = True
   
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import KillCommand
     if actionid == self.actionid:
       self.cdtime = KillCommand(self.hunter).cd()
@@ -38,7 +38,7 @@ class ChimeraShotCD(Cooldown):
   actionid = 'Chimera Shot'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import ChimeraShot
     if actionid == self.actionid:
       self.cdtime = ChimeraShot(self.hunter).cd()
@@ -49,7 +49,7 @@ class BlackArrowCD(Cooldown):
   actionid = 'Black Arrow'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import BlackArrow
     if actionid == self.actionid:
       self.cdtime = BlackArrow(self.hunter).cd()
@@ -60,9 +60,9 @@ class ExplosiveShotCD(Cooldown):
   actionid = 'Explosive Shot'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import ExplosiveShot
-    if actionid == self.actionid:
+    if actionid == self.actionid and not states['Lock and Load'].active():
       self.cdtime = ExplosiveShot(self.hunter).cd()
     else:
       self.cdtime -= time
@@ -71,7 +71,7 @@ class RapidFireCD(Cooldown):
   actionid = 'Rapid Fire'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import RapidFire
     if actionid == self.actionid:
       self.cdtime = RapidFire(self.hunter).cd()
@@ -79,10 +79,10 @@ class RapidFireCD(Cooldown):
       self.cdtime -= time
      
 class MurderOfCrowsCD(Cooldown):
-  actionid = 'A Murder Of Crows'
+  actionid = 'A Murder of Crows'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import MurderOfCrows
     if actionid == self.actionid:
       self.cdtime = MurderOfCrows(self.hunter).cd()
@@ -93,7 +93,7 @@ class FervorCD(Cooldown):
   actionid = 'Fervor'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import Fervor
     if actionid == self.actionid:
       self.cdtime = Fervor(self.hunter).cd()
@@ -104,7 +104,7 @@ class DireBeastCD(Cooldown):
   actionid = 'Dire Beast'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import DireBeast
     if actionid == self.actionid:
       self.cdtime = DireBeast(self.hunter).cd()
@@ -115,7 +115,7 @@ class ExplosiveTrapCD(Cooldown):
   actionid = 'Explosive Trap'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import ExplosiveTrap
     if actionid == self.actionid:
       self.cdtime = ExplosiveTrap(self.hunter).cd()
@@ -126,7 +126,7 @@ class FocusFireCD(Cooldown):
   actionid = 'Focus Fire'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import FocusFire
     if actionid == self.actionid:
       self.cdtime = FocusFire(self.hunter).cd()
@@ -137,9 +137,9 @@ class KillShotCD(Cooldown):
   actionid = 'Kill Shot'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import KillShot
-    if actionid == self.actionid:
+    if actionid == self.actionid and not states['Kill Shot Double'].active():
       self.cdtime = KillShot(self.hunter).cd()
     else:
       self.cdtime -= time
@@ -148,7 +148,7 @@ class PowershotCD(Cooldown):
   actionid = 'Powershot'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import Powershot
     if actionid == self.actionid:
       self.cdtime = Powershot(self.hunter).cd()
@@ -159,7 +159,7 @@ class GlaiveTossCD(Cooldown):
   actionid = 'Glaive Toss'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import GlaiveToss
     if actionid == self.actionid:
       self.cdtime = GlaiveToss(self.hunter).cd()
@@ -170,7 +170,7 @@ class BarrageCD(Cooldown):
   actionid = 'Barrage'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import Barrage
     if actionid == self.actionid:
       self.cdtime = Barrage(self.hunter).cd()
@@ -181,7 +181,7 @@ class StampedeCD(Cooldown):
   actionid = 'Stampede'
   computable = True
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     from calcs.spells import Stampede
     if actionid == self.actionid:
       self.cdtime = Stampede(self.hunter).cd()

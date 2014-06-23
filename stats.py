@@ -29,7 +29,7 @@ class Stat(object):
     if isinstance(hunter,HunterMeta):
       self.hunter = hunter
     else:
-      raise Exception('Stat object must be initiated with a HunterCalc object')
+      raise Exception('Stat object must be initiated with a HunterMeta object')
   
   # these methods are setters if a value is passed, otherwise getters
   def gear(self,value=''):
@@ -74,8 +74,11 @@ class Stat(object):
     else:
       return self._rating
   
+  def attunement(self):
+    return 1.0
+  
   def additives(self):
-    return max(self.gear(), self.food(), self.flask(), self.buffa(), self.basea(),0) # could theoretically be negative otherwise
+    return max(self.attunement()*sum([self.gear(), self.food(), self.flask()]) + self.buffa() + self.basea(),0) # could theoretically be negative otherwise
   
   def multiplicatives(self):
     return (1+self.buffm())*(1+self.spec())
@@ -85,6 +88,13 @@ class Stat(object):
     a = self.additives()
     m = self.multiplicatives()
     return a*m
+  
+  def total_percent(self):
+    """ The percent that shows up in the character """
+    try:
+      return self.total_static()/float(self.rating())
+    except ValueError:
+      return None
     
   def total_averaged(self, procs=[]):
     """ The total with proc averages """
@@ -125,6 +135,12 @@ class CritStat(Stat):
   _rating = 16
   _buffa = _rating * 5
   _basea = _rating * (10 - 3) # 10=crit for agi users, 3=boss crit suppression
+
+  def attunement(self):
+    """ 5% more crit from rating sources for MM """
+    if self.hunter.spec != 1:
+      return 1.0
+    return 1.05
   
   def buffa(self):
     """ 5% crit buff """
@@ -151,22 +167,20 @@ class MasteryStat(Stat):
   def buffa(self):
     """ 5% mastery buff """
     return super(MasteryStat,self).buffa()
+  
+  def additives(self):
+    """ For mastery, the mastery buff counts since it is technically a rating """
+    return max(self.attunement()*sum([self.gear(), self.food(), self.flask(), self.buffa()]) + self.basea(),0) # could theoretically be negative otherwise
 
 class VersatilityStat(Stat):
-  """ Assuming this defaults to zero for now """
+  """ 3% versatility buff """
   _rating = 23
-  
-  def rating(self):
-    """ Placeholder """
-    return super(VersatilityStat,self).rating()
+  _buffa = _rating * 3
 
 class MultistrikeStat(Stat):
-  """ Assuming this defaults to zero for now """
+  """ 5% multistrike buff """
   _rating = 23
-  
-  def rating(self):
-    """ Placeholder """
-    return super(MultistrikeStat,self).rating()
+  _buffa = _rating * 5
 
 class Proc(Calc):
   rppm = 1.0

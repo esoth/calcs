@@ -32,7 +32,7 @@ class Proc(object):
             'active':self.active(),
             'stacks':self.stacks()}
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
     pass
 
 class LockAndLoadProc(Proc):
@@ -40,7 +40,7 @@ class LockAndLoadProc(Proc):
   proc_id = 'Lock and Load'
   _stacks = 1
   _duration = 1
-  _counter_to_proc = 1
+  _counter_to_proc = 10
   _start_counter = 10
   _damage_modifier = 1
   _focus_modifier = 1
@@ -48,11 +48,14 @@ class LockAndLoadProc(Proc):
   _duration = 1
   _stacks = 1
  
-  def update_state(self,time,actionid):
+  def update_state(self,time,actionid,states):
+    if states['Black Arrow'].active():
+      self._counter_to_proc -= time
+    elif self._counter_to_proc <= 0:
+      self._counter_to_proc = self._start_counter
     # we want to check if Black Arrow is active.
     # if it is, increment _counter_to_proc
     # if _counter_to_proc is currently <= 0 it activated already; reset
-    pass
   
   def activate(self):
     return self._counter_to_proc <= 0

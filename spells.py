@@ -12,13 +12,6 @@ BM_MASTERY_SCALAR = 2
 MM_MASTERY_SCALAR = 2
 SV_MASTERY_SCALAR = 1
 
-class Documentable(Calc):
-  """ Contains a value and a formula. The formula is a textual output to be displayed
-        on a page """
-  value = 0.0
-  formula = 'a generic formula'
-  descriptions = {}
-
 class Spell(Calc):
   _weapon = 0.0 # a coefficient
   _ap = 0.0 # a coefficient
@@ -31,6 +24,8 @@ class Spell(Calc):
   _focus = 0 # focus cost
   _cd = 0
   _duration = 0
+  _perk = 0
+  _versatility = 0
   
   def weapon(self):
     return self._weapon
@@ -64,7 +59,9 @@ class Spell(Calc):
                        ('armor','Armor mit.'),
                        ('mastery','Mastery buff'),
                        ('buff','Buff'),
+                       ('perk','Draenor perk'),
                        ('spec','Spec. based mod.'),
+                       ('versatility','Versatility'),
                        ('speed','Cast time'),
                        ('focus','Focus cost'),
                        ('cd','Cooldown'),
@@ -72,7 +69,7 @@ class Spell(Calc):
                        ('dps','DPS'),)
     
     for attrid,attrtitle in _attributeslist:
-      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec',)
+      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec','perk','versatility')
       to_double = ('speed','base','damage','dps',)
       func = getattr(self,attrid)
       value = getattr(self,attrid)()
@@ -87,6 +84,13 @@ class Spell(Calc):
       if func.func_doc and func.func_doc.strip():
         attr['description'] = func.func_doc.strip()
       _attributes.append(attr)
+    
+    if self.lone():
+      attr = {'id':'lone',
+              'title':'Lone Wolf',
+              'description': self.lone.func_doc.strip(),
+              'value': '%.02f%%' % (self.lone()*100)}
+      _attributes.insert(-3,attr)
     return _attributes
   
   def __init__(self, hunter):
@@ -102,8 +106,12 @@ class Spell(Calc):
     crit_chance = min(self.critchance() + self.hunter.crit.total_static()/float(self.hunter.crit.rating())/100.0,1)
     crit_mod = self.critmod() + 2.00
     return (crit_mod * crit_chance + (1-crit_chance))
+  
+  def lone(self):
+    """ Lone Wolf (Versatility) talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
     
-  def damage(self):
+  def damage(self, states={}):
     dmg = self.base() * self.totalcritmod()
     _mastery = self.mastery()
     if self.armor():
@@ -114,8 +122,14 @@ class Spell(Calc):
       dmg = dmg * self.mastery()
     if self.spec():
       dmg = dmg * self.spec()
+    if self.perk():
+      dmg = dmg * self.perk()
     if self.modifiers():
       dmg = dmg * self.modifiers()
+    if self.lone():
+      dmg = dmg * self.lone()
+    if self.versatility():
+      dmg = dmg * self.versatility()
     
     # multistrike
     return dmg
@@ -139,6 +153,14 @@ class Spell(Calc):
   def special(self):
     """ We might need to have a special consideration, like a guaranteed crit """
     return self.damage()
+  
+  def perk(self):
+    """ Draenor perk """
+    return self._perk
+
+  def versatility(self):
+    """ Versatility """
+    return (1+self.hunter.versatility.total_static()/float(self.hunter.versatility.rating())/100.0)
 
 class PhysicalSpell(Spell):
   _armor = armormod()
@@ -199,7 +221,7 @@ class FocusFire(Spell):
 
 class DireBeast(Spell):
   computable = True
-  name = "DireBeast"
+  name = "Dire Beast"
   _duration = 15
   _cd = 30
 
@@ -210,7 +232,16 @@ class AutoShot(PhysicalSpell):
   _ap = 0
   
   def speed(self):
-    hasted = self.hunter.weaponspeed/(1+self.hunter.haste.total_static()/self.hunter.haste.rating())
+    hasted = self.hunter.weaponspeed/(1+self.hunter.haste.total_static()/self.hunter.haste.rating()/100)
+    return hasted
+
+class PoisonedAmmo(MagicSpell):
+  computable = True
+  name = "Poisoned Ammo (Exotic Ammunitions)"
+  _weapon = 2.0
+  
+  def speed(self):
+    hasted = self.hunter.weaponspeed/(1+self.hunter.haste.total_static()/self.hunter.haste.rating()/100)
     return hasted
 
 class ArcaneShot(MagicSpell):
@@ -219,6 +250,7 @@ class ArcaneShot(MagicSpell):
   _weapon = 1.4
   _casttime = GCD
   _focus = 30
+  _perk = 1.2
 
 class BlackArrow(MagicSpell):
   computable = True
@@ -228,18 +260,20 @@ class BlackArrow(MagicSpell):
   _casttime = GCD
   _focus = 35
   _cd = 30
-  _spec = 1.3 # trap mastery
-  
+  _perk = 1.2
+  _spec = 1.3
+  _duration = 20
+
   def spec(self):
-    """ Trap mastery """
-    return self._spec
+    """ Trap Mastery """
+    return super(BlackArrow,self).spec()
 
 class ChimeraShot(MagicSpell):
   computable = True
   name = "Chimera Shot"
   _weapon = 1.9
   _casttime = GCD
-  _focus = 45
+  _focus = 35
   _cd = 9
 
 class AimedShot(PhysicalSpell):
@@ -248,6 +282,7 @@ class AimedShot(PhysicalSpell):
   _weapon = 2.55
   _casttime = 2.5
   _focus = 50
+  _perk = 1.2
   
 class CobraShot(MagicSpell):
   computable = True
@@ -255,6 +290,7 @@ class CobraShot(MagicSpell):
   _weapon = 0.35
   _casttime = 2
   _focus = -14
+  _perk = 1.2
   
   def casttime(self):
     haste = 1+self.hunter.haste.total_static()/self.hunter.haste.rating()/100
@@ -263,7 +299,7 @@ class CobraShot(MagicSpell):
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  _ap = .8 * 3
+  _ap = .8 * 4
   _casttime = GCD
   _focus = 25
   _cd = 6
@@ -282,10 +318,11 @@ class KillCommand(PhysicalSpell):
   _casttime = GCD
   _cd = 6
   _ap = 1.575
+  _perk = 1.2
   
   def spec(self):
-    """ Combat Experience """
-    return 1.5
+    """ Combat Experience (1.5 base, 1.7 if Versatility) """
+    return self.hunter.meta.talent7 == 2 and 1.7 or 1.5
     
   def mastery(self):
     """ +dmg modifier if Survival """
@@ -313,10 +350,21 @@ class SteadyShot(PhysicalSpell):
   _focus = -14
   _casttime = 2
   _weapon = .35
+  _perk = 1.2
   
 class ExplosiveTrap(MagicSpell):
   computable = True
   name = "Explosive Trap"
+  _cd = 30
+  _ap = .0426906 * 11
+  _duration = 20
+  _spec = 1.3
+
+  def cd(self):
+    if self.hunter.meta.spec == 2:
+      return self._cd/2
+    else:
+      return self._cd
 
 class GlaiveToss(PhysicalSpell):
   computable = True
@@ -358,7 +406,7 @@ class MurderOfCrows(PhysicalSpell):
 
 class FocusingShot(PhysicalSpell):
   computable = True
-  name = "FocusingShot"
+  name = "Focusing Shot"
   _weapon = 1.00
   _casttime = 3
   _focus = -50

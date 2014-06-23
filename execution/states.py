@@ -32,10 +32,9 @@ class State(object):
             'active':self.active(),
             'stacks':self.stacks()}
  
-  def update_state(self,time,actionid,procs):
+  def update_state(self,time,actionid,procs,boss_health):
     pass
 
-# example
 class BestialWrathState(State):
   computable = True
   state_id = 'Bestial Wrath'
@@ -55,7 +54,7 @@ class BestialWrathState(State):
   def focus_modifier(self):
     return self.active() and self._focus_modifier or 1
  
-  def update_state(self,time,actionid,procs):
+  def update_state(self,time,actionid,procs,boss_health):
     if actionid == self.state_id:
       self._duration = BestialWrath(self.hunter).duration() # the behavior of this spell class is outside the scope of this
       self._active = True
@@ -69,10 +68,10 @@ class LockAndLoadState(State):
   state_id = 'Lock and Load'
   _active = False
   _duration = 10
-  _stacks = 2
+  _stacks = 0
  
   # going to need a class of procs to pass here
-  def update_state(self,time,actionid,procs):
+  def update_state(self,time,actionid,procs,boss_health):
     lnl = procs['Lock and Load']
     if lnl.activate():
       self._stacks = 2
@@ -96,7 +95,7 @@ class RapidFire(State):
   def time_modifier(self):
     return self.active() and self._time_modifier or 1
  
-  def update_state(self,time,actionid,procs):
+  def update_state(self,time,actionid,procs,boss_health):
     if actionid == self.state_id:
       self._duration = RapidFire(self.hunter).duration()
       self._active = True
@@ -104,7 +103,68 @@ class RapidFire(State):
       self._duration -= time
     if self.duration() < 0:
       self._active = False
-      
+
+class BlackArrowState(State):
+  computable = True
+  state_id = 'Black Arrow'
+  _duration = 0
+  _stacks = 1
+ 
+  def update_state(self,time,actionid,procs,boss_health):
+    if actionid == self.state_id:
+      self._duration = BlackArrow(self.hunter).duration()
+      self._active = True
+    else:
+      self._duration -= time
+    if self.duration() < 0:
+      self._active = False
+  
+  def active(self):
+    return self.duration() > 0
+
+class SerpentStingState(State):
+  computable = True
+  state_id = 'Serpent Sting'
+  _total = 0
+  _duration = 0
+
+  def update_state(self,time,actionid,procs,boss_health):
+    if actionid == 'Arcane Shot':
+      self._duration = SerpentSting(self.hunter).duration()
+      self._active = True
+      self._total += SerpentSting(self.hunter).damage()
+    else:
+      self._duration -= time
+    if self.duration() < 0:
+      self._active = False
+  
+  def total(self):
+    return self._total
+
+class CarefulAimState(State):
+  computable = True
+  state_id = 'Careful Aim'
+  _active = False
+
+  def update_state(self,time,actionid,procs,boss_health):
+    self._active = boss_health >= .8
+
+class KillShotState(State):
+  computable = True
+  state_id = 'Kill Shot'
+  _active = False
+
+  def update_state(self,time,actionid,procs,boss_health):
+    self._active = boss_health <= .35
+
+class KillShotDouble(State):
+  computable = True
+  state_id = 'Kill Shot Double'
+  _active = True
+
+  def update_state(self,time,actionid,procs,boss_health):
+    self._active = not self._active
+          
       
       
       

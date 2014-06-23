@@ -7,6 +7,9 @@ class HunterMeta(object):
       The hunter object is passed to spell methods
   """
   race = 'Night Elf'
-  talentstr = '0000000'
+  talent4 = 0
+  talent5 = 0
+  talent6 = 0
+  talent7 = 0
   spec = 0 # 0=BM, 1=MM, 2=SV
   glyphs = []

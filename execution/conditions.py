@@ -70,6 +70,135 @@ class SteadyShotCondition(Condition):
   def validate(self, cds, states, focus, time):
     return self.hunter.meta.spec == 1
 
+class GlaiveTossCondition(Condition):
+  title = "Glaive Toss - talented and off CD"
+  id = 'GT'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = GlaiveToss(self.hunter)
+    checks = [cds['Glaive Toss'].cdtime <= 0 or False,
+              focus >= spell.focus(),
+              self.hunter.meta.talent6 == 0]
+    return False not in checks
+
+class PowershotCondition(Condition):
+  title = "Powershot - talented and off CD"
+  id = 'PS'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = Powershot(self.hunter)
+    checks = [cds['Powershot'].cdtime <= 0 or False,
+              focus >= spell.focus(),
+              self.hunter.meta.talent6 == 1]
+    return False not in checks
+
+class BarrageCondition(Condition):
+  title = "Barrage - talented and off CD"
+  id = 'Ba'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = Barrage(self.hunter)
+    checks = [cds['Barrage'].cdtime <= 0 or False,
+              focus >= spell.focus(),
+              self.hunter.meta.talent6 == 2]
+    return False not in checks
+
+class AMurderOfCrowsCondition(Condition):
+  title = "A Murder of Crows - talented and off CD"
+  id = 'Ba'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = MurderOfCrows(self.hunter)
+    checks = [cds['A Murder of Crows'].cdtime <= 0 or False,
+              focus >= spell.focus(),
+              self.hunter.meta.talent5 == 0]
+    return False not in checks
+
+class StampedeCondition(Condition):
+  title = "Stampede - talented and off CD"
+  id = 'St'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    checks = [cds['Stampede'].cdtime <= 0 or False,
+              self.hunter.meta.talent5 == 2]
+    return False not in checks
+
+class RapidFireCondition(Condition):
+  title = "Rapid Fire - MM only and off CD"
+  id = 'RF'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    checks = [cds['Rapid Fire'].cdtime <= 0 or False,
+              self.hunter.meta.spec == 1]
+    return False not in checks
+
+class ChimeraShotCondition(Condition):
+  title = "Chimera Shot - off CD"
+  id = 'Ch'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = ChimeraShot(self.hunter)
+    checks = [cds['Chimera Shot'].cdtime <= 0 or False,
+              focus >= spell.focus()]
+    return False not in checks
+
+class AimedShotCondition(Condition):
+  title = "Aimed Shot - focus check"
+  id = 'Ai'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = AimedShot(self.hunter)
+    return focus >= spell.focus()
+
+class BlackArrowCondition(Condition):
+  title = "Black Arrow - focus and CD check"
+  id = 'BA'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = BlackArrow(self.hunter)
+    checks = [cds['Black Arrow'].cdtime <= 0 or False,
+              focus >= spell.focus()]
+    return False not in checks
+
+class ExplosiveShotCondition(Condition):
+  title = "Explosive Shot - off CD"
+  id = 'ES'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = ExplosiveShot(self.hunter)
+    checks = [cds['Explosive Shot'].cdtime <= 0 or False,
+              focus >= spell.focus()]
+    return False not in checks
+
+class FocusingShotCondition(Condition):
+  title = "Focusing Shot - talented"
+  id = 'FS'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    return self.hunter.meta.talent7 == 1
+
+class KillShotCondition(Condition):
+  title = "Kill Shot - off CD and <= 35% boss health"
+  id = 'KS'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = KillShot(self.hunter)
+    checks = [cds['Kill Shot'].cdtime <= 0 or False,
+              states['Kill Shot'].active()]
+    return False not in checks
+
 
 
 import inspect, sys

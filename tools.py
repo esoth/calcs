@@ -1,8 +1,8 @@
 def armormod():
   """ 1-1938/(1938+46203.33); 1938 is boss armor: 134*103-11864 """
   # armor = 134 * level - 11864; f(103) = 1938
-  base = 1938
-  return 1-base/(base+11864)
+  base = 1938.0
+  return 1.0-base/(base+11864.0)
   
 # races
 HUMAN = 1

@@ -7,19 +7,23 @@ class Hunter(object):
   weaponmax = 0
   weaponspeed = 3
   
-  def __init__(self):
-    self.meta = HunterMeta()
-    self.agility = AgilityStat(self.meta)
-    self.crit = CritStat(self.meta)
-    self.haste = HasteStat(self.meta)
-    self.mastery = MasteryStat(self.meta)
-    self.versatility = VersatilityStat(self.meta)
-    self.multistrike = MultistrikeStat(self.meta)
+  def __init__(self, meta):
+    if isinstance(meta,HunterMeta):
+      self.meta = meta
+    else:
+      raise Exception('Hunter object must be instantiated with a HunterMeta object')
+    self.agility = AgilityStat(meta)
+    self.crit = CritStat(meta)
+    self.haste = HasteStat(meta)
+    self.mastery = MasteryStat(meta)
+    self.versatility = VersatilityStat(meta)
+    self.multistrike = MultistrikeStat(meta)
   
   def do_stats(self):
     complist = [('gear','Gear'),
                 ('flask','Flask'),
                 ('food','Food'),
+                ('attunement','Attunement'),
                 ('buffa','Buff (additive)'),
                 ('buffm','Buff (multiplicative)'),
                 ('basea','Base stats'),
@@ -40,14 +44,15 @@ class Hunter(object):
         component = {'title':comptitle,
                      'id':compid,
                      'description':'',
-                     'value': compid in ('buffm','spec') and pretty(func()) or pretty(func(),percent=False)}
+                     'value': compid in ('buffm','spec','attunement') and pretty(func()) or pretty(func(),percent=False)}
         if func.func_doc and func.func_doc.strip():
           component['description'] = func.func_doc.strip()
         _components.append(component)
       _stats.append({'id':statid,
                      'title':stattitle,
                      'components':_components,
-                     'total':getattr(self,statid).total_static()})
+                     'total':getattr(self,statid).total_static(),
+                     'totalp':getattr(self,statid).total_percent()})
 
     _stats.append({'id': 'weapondmg',
                    'title': 'Weapon dmg.',
@@ -100,3 +105,6 @@ class Hunter(object):
   def focus_gen(self):
     """ Base focus generation - 4 * haste """
     return (1 + self.haste.total_static()/self.haste.rating()/100)*4.0
+  
+  def max_focus(self):
+    return self.meta.spec in (0,1,) and 120 or 100
