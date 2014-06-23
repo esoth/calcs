@@ -108,7 +108,7 @@ class BarrageCondition(Condition):
 
 class AMurderOfCrowsCondition(Condition):
   title = "A Murder of Crows - talented and off CD"
-  id = 'Ba'
+  id = 'MoC'
   computable = True
   
   def validate(self, cds, states, focus, time):
