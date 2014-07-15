@@ -1,5 +1,5 @@
 from huntermeta import HunterMeta
-from tools import PANDARENS
+from tools import *
 
 class Calc(object):
   def __init__(self, **kw):
@@ -19,10 +19,9 @@ class Stat(object):
   _gear = float(0)
   _food = float(0)
   _flask = float(0)
-  _buffa = float(0)
-  _basea = float(0)
-  _buffm = float(0)
-  _spec = float(0)
+  _spec = float(1)
+  _buff = float(0)
+  _base = float(0)
   _rating = 1 # rating/1% ratio
   
   def __init__(self,hunter):
@@ -37,31 +36,28 @@ class Stat(object):
       self._gear = value
     else:
       return self._gear
+  
   def food(self,value=''):
+    """ Pandarens receive double """
     if value:
       self._food = value
     else:
-      return self._food
+      return self.hunter.race in PANDARENS and self._food*2 or self._food # Pandaren
   def flask(self,value=''):
     if value:
       self._flask = value
     else:
       return self._flask
-  def buffa(self,value=''):
+  def buff(self,value=''):
     if value:
-      self._buffa = value
+      self._buff = value
     else:
-      return self._buffa
-  def basea(self,value=''):
+      return self._buff
+  def base(self,value=''):
     if value:
-      self._basea = value
+      self._base = value
     else:
-      return self._basea
-  def buffm(self,value=''):
-    if value:
-      self._buffm = value
-    else:
-      return self._buffm
+      return self._base
   def spec(self,value=''):
     if value:
       self._spec = value
@@ -73,114 +69,189 @@ class Stat(object):
       self._rating = value
     else:
       return self._rating
+  def racial(self):
+    return 0
   
   def attunement(self):
-    return 1.0
+    return 1
   
-  def additives(self):
-    return max(self.attunement()*sum([self.gear(), self.food(), self.flask()]) + self.buffa() + self.basea(),0) # could theoretically be negative otherwise
-  
-  def multiplicatives(self):
-    return (1+self.buffm())*(1+self.spec())
+  def ratings(self):
+    return self.attunement()*sum([self.gear(), self.food(), self.flask()])
   
   def total_static(self):
     """ The total at all times, before procs """
-    a = self.additives()
-    m = self.multiplicatives()
-    return a*m
-  
-  def total_percent(self):
-    """ The percent that shows up in the character """
-    try:
-      return self.total_static()/float(self.rating())
-    except ValueError:
-      return None
+    stats = self.ratings()/float(self.rating())
+    return stats + self.buff() + self.base() + self.racial()
     
-  def total_averaged(self, procs=[]):
+  def total(self):
     """ The total with proc averages """
-    return self.total_static() + self.sum_procs(procs)
+    return self.total_static()
+  
+  def total_display(self):
+    return '%.02f%%' % self.total()
   
   def sum_procs(self, procs=[]):
     return sum([p.average() for p in self.procs])
     
 class AgilityStat(Stat):
-  """ The mail specialization only works on gear """
-  _flask = 1000
-  _basea = 218
-  _buffm = 0.05
+  """ Behaves a bit differently than ratings based stats """
+  _base = 1288
+  _spec = 1.05
+  _buff = 5
   
   def rating(self):
     return '--'
   
-  def basea(self):
+  def base(self):
     """ To do: get a proper list of starting stats per race """
-    return super(AgilityStat,self).basea()
+    from tools import HUMAN,ORC,DWARF,NIGHTELF,UNDEAD,TAUREN,GNOME,TROLL,GOBLIN,BLOODELF,DRAENEI,WORGEN,PANDAREN
+    racemap = {HUMAN:1284,
+               ORC:1281,
+               DWARF:1280,
+               NIGHTELF:1288,
+               UNDEAD:1282,
+               TAUREN:1280,
+               GNOME:1280, # not actually playable
+               TROLL:1286,
+               GOBLIN:1286,
+               BLOODELF:1286,
+               DRAENEI:1415,
+               WORGEN:1286,
+               PANDAREN:1282}
+    return racemap[self.hunter.race]
   
-  def flask(self):
-    """ Flask of Spring Blossoms """
-    return super(AgilityStat,self).flask()
+  def buff(self):
+    """ Kings """
+    return super(AgilityStat,self).buff()
   
-  def food(self):
-    """ Pandarens receive double """
-    return self.hunter.race in PANDARENS and 600 or 300 # Pandaren
+  def spec(self):
+    """ Mail armor: 5% agi """
+    return super(AgilityStat,self).spec()
   
-  def additives(self):
-    return max(self.gear()*(1+self.spec()) + self.food() + self.flask() + self.buffa() + self.basea(),0)
+  def total_static(self):
+    """ The total at all times, before procs """
+    return (self.ratings() + self.base()) * self.spec() * (1+self.buff()/100.0)
   
-  def multiplicatives(self):
-    return (1+self.buffa())
+  def total_display(self):
+    return '%.02f' % self.total()
 
 class CritStat(Stat):
   """ Buffs, agi class bonus, boss crit depression """
-  _rating = 16
-  _buffa = _rating * 5
-  _basea = _rating * (10 - 3) # 10=crit for agi users, 3=boss crit suppression
+  _rating = 110
+  _buff = 5
+  _base = 15-3 # 10=crit for agi users, 3=boss crit suppression
 
   def attunement(self):
     """ 5% more crit from rating sources for MM """
-    if self.hunter.spec != 1:
-      return 1.0
-    return 1.05
+    return self.hunter.spec == 1 and 1.05 or 1
   
-  def buffa(self):
+  def racial(self):
+    if self.hunter.race == BLOODELF:
+      return 1
+    return 0
+  
+  def buff(self):
     """ 5% crit buff """
-    return super(CritStat,self).buffa()
+    return super(CritStat,self).buff()
   
-  def basea(self):
+  def base(self):
     """ Crit depression for +3 boss levels (-3%) + 10% crit for agi users"""
-    return super(CritStat,self).basea()
+    return super(CritStat,self).base()
+  
+  def food(self):
+    return self.hunter.spec == 1 and 150 or 0
+  
+  def flask(self):
+    return self.hunter.spec == 1 and 500 or 0
+  
+  def total_display(self):
+    """ In game tooltip will appear 3% higher, plus 1% for some racials """
+    return super(CritStat,self).total_display()
 
 class HasteStat(Stat):
   """ 5% haste buff """
-  _rating = 23
-  _buffa = _rating * 5
+  _rating = 80
+  _buff = 5
   
-  def buffa(self):
+  def buff(self):
     """ 5% haste buff """
-    return super(HasteStat,self).buffa()
+    return super(HasteStat,self).buff()
+  
+  def total_static(self):
+    """ Haste works a bit different in that it's all multiplicative """
+    stats = 1 + self.ratings()/float(self.rating())/100
+    stats *= (1+self.buff()/100.0)
+    if self.hunter.race == NIGHTELF:
+      stats *= 1.01
+    return stats
+
+  def total_display(self):
+    """ Night Elves always have 1% haste """
+    return '%.02f%%' % ((self.total_static()-1)*100.0)
 
 class MasteryStat(Stat):
   """ 5% mastery buff """
-  _rating = 23
-  _buffa = _rating * 5
+  _rating = 55
+  _buff = 550 # this one is actually rating!
   
-  def buffa(self):
-    """ 5% mastery buff """
-    return super(MasteryStat,self).buffa()
+  def food(self):
+    return self.hunter.spec == 0 and 150 or 0
   
-  def additives(self):
+  def flask(self):
+    return self.hunter.spec == 0 and 500 or 0
+  
+  def rating(self):
+    if self.hunter.spec == 0:
+      return 55
+    elif self.hunter.spec == 1:
+      return 110
+    else:
+      return 110
+  
+  def base(self):
+    if self.hunter.spec == 0:
+      return 16
+    elif self.hunter.spec == 1:
+      return 8
+    else:
+      return 8
+  
+  def buff(self):
+    """ 5% mastery buff - but technically a rating """
+    return super(MasteryStat,self).buff()
+
+  def attunement(self):
+    """ 5% more mastery from rating sources for BM """
+    return self.hunter.spec == 0 and 1.05 or 1
+  
+  def ratings(self):
     """ For mastery, the mastery buff counts since it is technically a rating """
-    return max(self.attunement()*sum([self.gear(), self.food(), self.flask(), self.buffa()]) + self.basea(),0) # could theoretically be negative otherwise
+    return self.attunement()*sum([self.gear(), self.food(), self.flask(), self.buff()])
+  
+  def total_static(self):
+    """ The total at all times, before procs """
+    stats = self.ratings()/self.rating()
+    return stats + self.base()
 
 class VersatilityStat(Stat):
   """ 3% versatility buff """
-  _rating = 23
-  _buffa = _rating * 3
+  _rating = 130
+  _buff = 3
 
 class MultistrikeStat(Stat):
   """ 5% multistrike buff """
-  _rating = 23
-  _buffa = _rating * 5
+  _rating = 66
+  _buff = 5
+  
+  def food(self):
+    return self.hunter.spec == 2 and 150 or 0
+  
+  def flask(self):
+    return self.hunter.spec == 2 and 500 or 0
+
+  def attunement(self):
+    """ 5% more multistrike from rating sources for SV """
+    return self.hunter.spec == 2 and 1.05 or 1
 
 class Proc(Calc):
   rppm = 1.0

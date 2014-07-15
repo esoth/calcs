@@ -199,6 +199,28 @@ class KillShotCondition(Condition):
               states['Kill Shot'].active()]
     return False not in checks
 
+class DireBeastCondition(Condition):
+  title = "Dire Beast - talented and off CD"
+  id = 'DB'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = DireBeast(self.hunter)
+    checks = [cds['Dire Beast'].cdtime <= 0 or False,
+              self.hunter.meta.talent4 == 1]
+    return False not in checks
+
+class FervorCondition(Condition):
+  title = "Fervor - talented and off CD"
+  id = 'Fe'
+  computable = True
+  
+  def validate(self, cds, states, focus, time):
+    spell = Fervor(self.hunter)
+    checks = [cds['Fervor'].cdtime <= 0 or False,
+              self.hunter.meta.talent4 == 0]
+    return False not in checks    
+
 
 
 import inspect, sys

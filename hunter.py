@@ -1,6 +1,6 @@
 from huntermeta import HunterMeta
 from stats import *
-from tools import pretty
+from tools import tooltip
   
 class Hunter(object):  
   weaponmin = 0
@@ -24,10 +24,9 @@ class Hunter(object):
                 ('flask','Flask'),
                 ('food','Food'),
                 ('attunement','Attunement'),
-                ('buffa','Buff (additive)'),
-                ('buffm','Buff (multiplicative)'),
-                ('basea','Base stats'),
-                ('spec','Spec/class bonus'),
+                ('spec','Special'),
+                ('buff','Buff'),
+                ('base','Base stats'),
                 ('rating','Rating per 1%')]
     statlist = [('agility','Agility'),
                 ('crit','Critical Strike'),
@@ -44,15 +43,18 @@ class Hunter(object):
         component = {'title':comptitle,
                      'id':compid,
                      'description':'',
-                     'value': compid in ('buffm','spec','attunement') and pretty(func()) or pretty(func(),percent=False)}
+                     'value': tooltip(compid,func())}
         if func.func_doc and func.func_doc.strip():
           component['description'] = func.func_doc.strip()
         _components.append(component)
-      _stats.append({'id':statid,
+      display_func = getattr(self,statid).total_display
+      stat_dict = {'id':statid,
                      'title':stattitle,
                      'components':_components,
-                     'total':getattr(self,statid).total_static(),
-                     'totalp':getattr(self,statid).total_percent()})
+                     'total':display_func(),}
+      if display_func.func_doc:
+        stat_dict['description'] = display_func.func_doc.strip()
+      _stats.append(stat_dict)
 
     _stats.append({'id': 'weapondmg',
                    'title': 'Weapon dmg.',
@@ -77,13 +79,17 @@ class Hunter(object):
                    'title': 'AP',
                    'components': [{'title':'From agility',
                                    'id':'agility',
-                                   'value': self.agility.total_static()},
-                                  {'title':'5% Buff',
+                                   'value': self.agility.total()},
+                                  {'title':'10% Buff',
                                    'id':'buff',
-                                   'value': '105.00%',
-                                   'description': u'Not sure if this is right'},],
+                                   'value': '110.00%',
+                                   'description': u'True Shot Aura'},],
                    'total': '%.02f' % self.ap(),
                    'description': self.ap.func_doc.strip()})
+    _stats.append({'id': 'focusregen',
+                   'title': 'Focus Regen',
+                   'total': '%.02f' % self.focus_gen()})
+                               
     return _stats
   
   def setgear(self,**kw):
@@ -92,19 +98,19 @@ class Hunter(object):
       if isinstance(getattr(self,k),Stat):
         getattr(self,k).gear(v)
 
-  def weapondmg(self):
+  def weapondmg(self,normalize=True):
     """ Weapon damage is average of weapon's min and max, plus AP/3.5 * Weapon Speed """
     wpn = (self.weaponmin + self.weaponmax) / 2
-    ap = self.ap() / 3.5 * self.weaponspeed # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
+    ap = self.ap() / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
     return wpn + ap
   
   def ap(self):
-    """ Currently using a 5% AP boost - is this right? """
-    return self.agility.total_static()*1.05
+    """ 10% AP buff """
+    return self.agility.total()*1.10
   
   def focus_gen(self):
     """ Base focus generation - 4 * haste """
-    return (1 + self.haste.total_static()/self.haste.rating()/100)*4.0
+    return self.haste.total()*4.0
   
   def max_focus(self):
     return self.meta.spec in (0,1,) and 120 or 100

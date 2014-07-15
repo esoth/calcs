@@ -1,8 +1,7 @@
 def armormod():
-  """ 1-1938/(1938+46203.33); 1938 is boss armor: 134*103-11864 """
-  # armor = 134 * level - 11864; f(103) = 1938
+  """ 1-1938/(1938+5234); 1938 is boss armor, 134*103-11864; K=3610 """
   base = 1938.0
-  return 1.0-base/(base+11864.0)
+  return 1.0-base/(base+3610)
   
 # races
 HUMAN = 1
@@ -73,11 +72,12 @@ VERSATILITY = 'Versatility'
 TIER7 = [EXOTICMUNITIONS,FOCUSINGSHOT,VERSATILITY]
 TALENTS = [TIER1,TIER2,TIER3,TIER4,TIER5,TIER6,TIER7]
 
-def istalent(talentstr,talent): # talentstr is 6 digits of numbers 0-2
-  _talents = []
-  for i in range(0,len(talentstr)):
-    _talents.append(TALENTS[i][int(talentstr[i])])
-  return talent in _talents
+def product(value):
+  if value:
+    _next = value.pop()
+    return _next * product(value)
+  else:
+    return 1
 
 import json
 from urllib import urlopen
@@ -86,16 +86,15 @@ SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('http://us.battle.ne
 for r in json.load(urlopen('http://eu.battle.net/api/wow/realm/status'))['realms']:
   if (r['slug'],r['name']) not in SERVERS:
     SERVERS.append((r['slug'],r['name']))
-  
-def pretty(value,percent=True):
-  if not value:
-    return '--'
-  elif percent:
-    value *= 100
     
-  if isinstance(value,float):
-    if value < 0.01: # float rounding errors, blech
-      return '--'
-    return '%.02f%s' % (value,percent and '%' or '')
+def tooltip(compid,value):
+  if compid == 'buff':
+    return '%.02f%%' % value
+  elif compid in ('attunement','spec'):
+    return value == 1 and '--' or '%.02f' % (value*100.0)
+  elif compid == 'spell':
+    return '%.02f%%' % (value*100.0)
+  elif isinstance(value,float):
+    return '%.02f' % value
   else:
     return value
