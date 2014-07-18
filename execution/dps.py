@@ -30,6 +30,8 @@ def runsingle(hunter):
   table = []
   time_sum = 0
   dmg_sum = 0
+  pet_basic_sum = 0
+  pb_counter = 0
   shot_counts = {}
   _priority = [bm_priority,mm_priority,sv_priority]
   max_focus = hunter.max_focus()
@@ -67,6 +69,11 @@ def runsingle(hunter):
           
         # pet stuff
         pet_basic,pet_ending_focus = pet.do_basic(hunter, pet_starting_focus, time, states, pet_states)
+        if spell_id == 'Fervor':
+          pet_ending_focus = min(pet_max_focus,pet_ending_focus+50)
+        pet_basic_sum += pet_basic
+        if pet_basic:
+          pb_counter += 1
         pet_ending_focus = min(pet_max_focus,pet_ending_focus)
 
         if spell_id in shot_counts:
@@ -82,7 +89,7 @@ def runsingle(hunter):
           focus_costs *= f_modifiers
         #if not gcd, calculate passive first and cap at max focus
         if time > 1:
-          ending_focus = min(max_focus,starting_focus + focus_total_gains) - focus_costs
+          ending_focus = min(max_focus,min(max_focus,starting_focus + focus_total_gains) - focus_costs)
         else:
           ending_focus = min(max_focus,starting_focus + focus_total_gains - focus_costs)
 
@@ -117,11 +124,15 @@ def runsingle(hunter):
     shot_counts['Poison Ammo'] = {'counter':'--',
                                   'total':poison_dmg}
     dmg_sum += poison_dmg
-  if hunter.meta.talent7 != 2:
+  if hunter.meta.talent7 != 2 or hunter.meta.spec == 0:
     pet_auto = pet.auto(hunter)*haste_counter*bw
     shot_counts['Pet (auto)'] = {'counter':'--',
                                  'total':pet_auto}
     dmg_sum += pet_auto
+  if hunter.meta.talent7 != 2 or hunter.meta.spec == 0:
+    shot_counts['Pet (basic)'] = {'counter':pb_counter,
+                                 'total':pet_basic_sum}
+    dmg_sum += pet_basic_sum
   if hunter.meta.spec == 2:
     serpent = states['Serpent Sting'].total()
     shot_counts['Serpent Sting'] = {'counter':'--',

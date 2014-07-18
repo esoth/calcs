@@ -51,7 +51,7 @@ class ArcaneShotCondition(Condition):
   def validate(self, cds, states, focus, time):
     spell = ArcaneShot(self.hunter)
     # spell.focus() this is a minimum if we allow focus pooling to be customized
-    checks = [focus >= 70 or (states['Bestial Wrath'].active() and focus >= 20)]
+    checks = [focus >= 40 or (states['Bestial Wrath'].active() and focus >= 20)]
     return False not in checks
 
 class CobraShotCondition(Condition):
@@ -218,6 +218,7 @@ class FervorCondition(Condition):
   def validate(self, cds, states, focus, time):
     spell = Fervor(self.hunter)
     checks = [cds['Fervor'].cdtime <= 0 or False,
+              focus <= 50,
               self.hunter.meta.talent4 == 0]
     return False not in checks    
 

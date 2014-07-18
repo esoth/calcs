@@ -44,6 +44,8 @@ class Pet(object):
   
   def do_basic(self,hunter,focus,time,states,pet_states):
     dmg = 0
+    if hunter.meta.spec in (1,2,) and hunter.meta.talent7 == 2:
+      return dmg,focus
     if self._counter > 0:
       self._counter -= time
     else:

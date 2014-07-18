@@ -10,7 +10,6 @@ class Spell(Calc):
   _weapon = 0.0 # a coefficient
   _ap = 0.0 # a coefficient
   _critchance = 0 # in addition to base crit, such as from a spell
-  _critmod = 0 # in addition to the base 200%
   _armor = 0 # mitigating modifier
   _buff = 0 # probably either physical or magical
   _casttime = GCD
@@ -27,8 +26,6 @@ class Spell(Calc):
     return self._ap
   def critchance(self):
     return self._critchance
-  def critmod(self):
-    return self._critmod
   def armor(self):
     return self._armor
   def buff(self):
@@ -106,6 +103,11 @@ class Spell(Calc):
     # v(1+.6m)
     mchance = self.hunter.multistrike.total()/100.0
     return 1+.6*mchance
+
+  def critmod(self):
+    if self.hunter.meta.spec == 1:
+      return self.hunter.mastery.total()/100.0
+    return 0
     
   def totalcritmod(self):
     """ Takes into account increased crit chance and/or modifier unique to this spell"""
@@ -167,6 +169,9 @@ class Spell(Calc):
     return 0
   
   def mastery(self):
+    """ Sniper training for MM """
+    if self.hunter.meta.spec == 1:
+      return 1+self.hunter.mastery.total()/100.0
     return 0
   
   def speed(self):
@@ -207,7 +212,7 @@ class MagicSpell(Spell):
     return super(MagicSpell,self).buff()
     
   def mastery(self):
-    """ +dmg modifier if Survival """
+    """ Sniper training for MM, Magic damage for SV """
     if self.hunter.meta.spec == 2: # SV
       return 1+self.hunter.mastery.total()/100.0
     return 0
@@ -240,6 +245,7 @@ class Fervor(Spell):
   name = "Fervor"
   _duration = 10
   _cd = 30
+  _focus = -50
 
 class FocusFire(Spell):
   computable = True
@@ -269,11 +275,7 @@ class DireBeast(PhysicalSpell):
     dmg *= self.armor()
     if self.hunter.meta.spec==0:
       dmg *= (1+self.hunter.mastery.total()/100.0+.2)
-    return dmg    
-  
-  def versatility(self):
-    """ Not sure if it benefits from this """
-    return 0
+    return dmg
 
 class AutoShot(PhysicalSpell):
   computable = True
@@ -292,7 +294,7 @@ class AutoShot(PhysicalSpell):
 class PoisonedAmmo(MagicSpell):
   computable = True
   name = "Poisoned Ammo (Exotic Ammunitions)"
-  _weapon = 2.0
+  _weapon = .4
   
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
@@ -329,6 +331,17 @@ class ChimeraShot(MagicSpell):
   _casttime = GCD
   _focus = 35
   _cd = 9
+ 
+  def damage(self, states={}):
+    base = super(ChimeraShot,self).damage(states)
+    if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
+      # we can assume this is a MM hunter
+      base = base/self.totalcritmod()
+      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
+      crit_mod = 2+self.hunter.mastery.total()/100.0
+      crit = (crit_mod * crit_chance + (1-crit_chance))
+      return base * crit
+    return base
 
 class AimedShot(PhysicalSpell):
   computable = True
@@ -337,6 +350,17 @@ class AimedShot(PhysicalSpell):
   _casttime = 2.5
   _focus = 50
   _perk = 1.2
+ 
+  def damage(self, states={}):
+    base = super(AimedShot,self).damage(states)
+    if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
+      # we can assume this is a MM hunter
+      base = base/self.totalcritmod()
+      crit_chance = min(self.critchance() + self.hunter.crit.total()/100.0,1)
+      crit_mod = 2+self.hunter.mastery.total()/100.0
+      crit = (crit_mod * crit_chance + (1-crit_chance))
+      return base * crit
+    return base
   
 class CobraShot(MagicSpell):
   computable = True
@@ -353,8 +377,9 @@ class CobraShot(MagicSpell):
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  _ap = .8 * 4
+  _ap = .4 * 4
   _casttime = GCD
+  _focus = 15
   _cd = 6
 
 class KillShot(PhysicalSpell):
@@ -403,6 +428,17 @@ class SteadyShot(PhysicalSpell):
   _casttime = 2
   _weapon = .35
   _perk = 1.2
+ 
+  def damage(self, states={}):
+    base = super(SteadyShot,self).damage(states)
+    if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
+      # we can assume this is a MM hunter
+      base = base/self.totalcritmod()
+      crit_chance = min(self.critchance() + self.hunter.crit.total()/100.0,1)
+      crit_mod = 2+self.hunter.mastery.total()/100.0
+      crit = (crit_mod * crit_chance + (1-crit_chance))
+      return base * crit
+    return base
   
 class ExplosiveTrap(MagicSpell):
   computable = True

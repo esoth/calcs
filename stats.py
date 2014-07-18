@@ -202,11 +202,11 @@ class MasteryStat(Stat):
   
   def rating(self):
     if self.hunter.spec == 0:
-      return 55
+      return 55.0
     elif self.hunter.spec == 1:
-      return 110
+      return 110.0
     else:
-      return 110
+      return 110.0
   
   def base(self):
     if self.hunter.spec == 0:
