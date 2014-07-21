@@ -1,36 +1,34 @@
 from states import *
 from cds import *
 from conditions import *
-from procs import *
 from priorities import *
 
 from calcs.spells import *
-from calcs.tools import product
+from calcs.tools import *
 from calcs.pet import Pet, pet_states_computable
         
-def runsingle(hunter):
+def runsingle(hunter,lastcalc):
   states = states_computable(hunter)
-  procs = procs_computable(hunter)
   cds = cds_computable(hunter)
   conditions = conditions_computable(hunter)
   pet = Pet()
   pet_states = pet_states_computable(pet,hunter)
  
-  def update_states(time,action,boss_health):
-    for k,proc in procs.items():
-      proc.update_state(time,action,states)
-      procs[k] = proc
+  def update_states(time,action,pet_basic,boss_health):
+    for k,state in states.items():
+      state.update_state(time,action,states,pet_basic,boss_health)
+      states[k] = state
     for k,cd in cds.items():
       cd.update_state(time,action,states)
       cds[k] = cd
-    for k,state in states.items():
-      state.update_state(time,action,procs,boss_health)
-      states[k] = state
  
   table = []
   time_sum = 0
   dmg_sum = 0
   pet_basic_sum = 0
+  auto_sum = 0
+  poison_sum = 0
+  pet_auto_sum = 0
   pb_counter = 0
   shot_counts = {}
   _priority = [bm_priority,mm_priority,sv_priority]
@@ -40,10 +38,6 @@ def runsingle(hunter):
   pet_ending_focus = pet_max_focus
   iterations = 200
   i = 0
-  haste_counter = 0 # applied to auto dps instead of time_sum
-                    # auto should scale equally with any haste procs
-                    # so a 1s ability under Rapid Fire is the same as
-                    # unhasted auto dps * 1.4
   total_time = 360
   while time_sum < total_time:
     starting_focus = ending_focus
@@ -59,22 +53,32 @@ def runsingle(hunter):
         t_modifiers = product([s.time_modifier() for s in states.values()])
         f_modifiers = product([s.focus_modifier() for s in states.values()])
         time = spell.casttime() / t_modifiers
-        if time != 0:
-          time = max(1,time)
+        if spell.casttime():
+          time = max(GCD,time)
         f_gains = [s.focus_gains(states,time) for s in states.values()]
         f_gains = [fg for fg in f_gains if fg]
         f_gains = f_gains and sum(f_gains) or 0
         dmg = spell.damage(states) * modifiers
-        haste_counter += spell.casttime()
+        auto_dmg = AutoShot(hunter).dps(states) * time * t_modifiers * modifiers
+        auto_sum += auto_dmg
+        poison_dmg = PoisonedAmmo(hunter).dps(states) * time * t_modifiers * modifiers
+        poison_sum += poison_dmg
           
         # pet stuff
+        p_modifiers = product([s.pet_damage_modifier() for s in states.values()])
+        pt_modifiers = product([s.pet_time_modifier() for s in states.values()])
+        pf_gains = [s.pet_focus_gains(states,time) for s in states.values()]
+        pf_gains = [pfg for pfg in pf_gains if pfg]
+        pf_gains = pf_gains and sum(pf_gains) or 0
         pet_basic,pet_ending_focus = pet.do_basic(hunter, pet_starting_focus, time, states, pet_states)
-        if spell_id == 'Fervor':
-          pet_ending_focus = min(pet_max_focus,pet_ending_focus+50)
+        pet_ending_focus += pf_gains
+        pet_ending_focus += spell.pet_focus_gain() # Fervor/Focus Fire
         pet_basic_sum += pet_basic
         if pet_basic:
           pb_counter += 1
         pet_ending_focus = min(pet_max_focus,pet_ending_focus)
+        pet_auto = pet.auto(hunter,states) * time * pt_modifiers * p_modifiers
+        pet_auto_sum += pet_auto
 
         if spell_id in shot_counts:
           shot_counts[spell_id]['counter'] += 1
@@ -87,6 +91,8 @@ def runsingle(hunter):
         focus_costs = spell.focus()
         if focus_costs > 0: # don't make cobra cost during BW!
           focus_costs *= f_modifiers
+          if states['Thrill of the Hunt'].active() and spell_id in ('Aimed Shot','Arcane Shot'):
+            focus_costs -= 20
         #if not gcd, calculate passive first and cap at max focus
         if time > 1:
           ending_focus = min(max_focus,min(max_focus,starting_focus + focus_total_gains) - focus_costs)
@@ -103,41 +109,45 @@ def runsingle(hunter):
                                 'totaltime':'%.02f' % time_sum,
                                 'boss_health':'%.02f%%' % (boss_health*100),
                                 'modifiers':'%.02f%%' % (modifiers*100),
-                                't_modifiers':'%.02f%%' % (t_modifiers*100)},
+                                't_modifiers':'%.02f%%' % (t_modifiers*100),
+                                'auto':'%.02f' % auto_dmg,
+                                'poison':'%.02f' % poison_dmg,
+                                'pet_auto':'%.02f' % pet_auto},
                       'pet':{'focus':int(pet_starting_focus),'damage':pet_basic},
                       'states':[s.info(states,time) for s in states.values()],
                       'cds':[c.info() for c in cds.values()],
                       'conditions':[c.validate(cds,states,starting_focus,1-i/float(iterations)) for c in conditions],})
-        update_states(time,spell_id,boss_health)
+        update_states(time,spell_id,pet_basic,boss_health)
         time_sum += time
         dmg_sum += dmg
         break
 
-  # add Bestial Wrath uptime as a modifier
-  bw = 1+states['Bestial Wrath'].uptime()/time_sum
-  auto_dmg = AutoShot(hunter).dps()*haste_counter*bw
-  dmg_sum += auto_dmg
+  dmg_sum += auto_sum
   shot_counts['Auto Shot'] = {'counter':'--',
-                              'total':auto_dmg,}
-  if hunter.meta.talent7 == 0:
-    poison_dmg = PoisonedAmmo(hunter).dps()*haste_counter*bw
+                              'total':auto_sum,}
+  if hunter.meta.talent7 == TIER7.index(EXOTICMUNITIONS):
+    dmg_sum += poison_sum
     shot_counts['Poison Ammo'] = {'counter':'--',
-                                  'total':poison_dmg}
+                                  'total':poison_sum}
     dmg_sum += poison_dmg
-  if hunter.meta.talent7 != 2 or hunter.meta.spec == 0:
-    pet_auto = pet.auto(hunter)*haste_counter*bw
+  if hunter.meta.talent7 != TIER7.index(VERSATILITY) or hunter.meta.spec == BM:
     shot_counts['Pet (auto)'] = {'counter':'--',
-                                 'total':pet_auto}
-    dmg_sum += pet_auto
-  if hunter.meta.talent7 != 2 or hunter.meta.spec == 0:
+                                 'total':pet_auto_sum}
+    dmg_sum += pet_auto_sum
+  if hunter.meta.talent7 != TIER7.index(VERSATILITY) or hunter.meta.spec == BM:
     shot_counts['Pet (basic)'] = {'counter':pb_counter,
                                  'total':pet_basic_sum}
     dmg_sum += pet_basic_sum
-  if hunter.meta.spec == 2:
+  if hunter.meta.spec == SV:
     serpent = states['Serpent Sting'].total()
     shot_counts['Serpent Sting'] = {'counter':'--',
                                     'total':serpent}
     dmg_sum += serpent
+  if hunter.meta.talent5 == TIER5.index(STAMPEDE):
+    auto = pet_auto_sum
+    dmg = auto + pet_basic_sum
+    dps = dmg / time_sum
+    shot_counts['Stampede']['total'] = shot_counts['Stampede']['counter'] * 20 * 4 * dps
 
   meta = {'states':states,'cds':cds,'conditions':conditions}
   shots=[]
@@ -146,8 +156,12 @@ def runsingle(hunter):
     shot_counts[k]['name'] = k
     shots.append(shot_counts[k])
   shots = sorted(shots, key=lambda term: term['name'])
+  diff = (dmg_sum/time_sum-lastcalc)
+  diff_success = diff >= 0 and 'success' or 'failure'
   totals = {'damage':'%.02f' % dmg_sum,
             'time':time_sum,
             'shots':shots,
-            'dps':'%.02f' % (dmg_sum/time_sum),}
+            'dps':'%.02f' % (dmg_sum/time_sum),
+            'diff':'%.02f' % abs(diff),
+            'diff_success':diff_success}
   return (table,meta,totals)

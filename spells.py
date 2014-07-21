@@ -15,10 +15,10 @@ class Spell(Calc):
   _casttime = GCD
   _spec = 0 # any special modifier
   _focus = 0 # focus cost
+  _pet_focus_gain = 0 # a one pet focus gain, probably from Focus Fire or Fervor
   _cd = 0
   _duration = 0
   _perk = 0
-  _versatility = 0
   
   def weapon(self):
     return self._weapon
@@ -30,12 +30,12 @@ class Spell(Calc):
     return self._armor
   def buff(self):
     return self._buff
-  def casttime(self):
-    return self._casttime
   def spec(self):
     return self._spec
   def focus(self):
     return self._focus
+  def pet_focus_gain(self):
+    return self._pet_focus_gain
   def cd(self):
     return self._cd
   def duration(self):
@@ -92,9 +92,9 @@ class Spell(Calc):
     """ Must be initiated with a hunter object """
     self.hunter = hunter
   
-  def base(self):
+  def base(self,ap=1):
     """ Base damage from AP and/or Weapon """
-    return self.hunter.weapondmg() * self.weapon() + self.hunter.ap() * self.ap()
+    return self.hunter.weapondmg(ap=ap) * self.weapon() + ap * self.hunter.ap() * self.ap()
   
   def multistrike(self):
     """ Two independent chances to do 30% damage = dmg * (1 +.6 * multi) """
@@ -104,10 +104,19 @@ class Spell(Calc):
     mchance = self.hunter.multistrike.total()/100.0
     return 1+.6*mchance
 
+  def casttime(self):
+    if self._casttime == 0:
+      return 0
+    haste = self.hunter.haste.total()
+    return max(GCD,self._casttime/haste)
+
   def critmod(self):
+    base = 0
     if self.hunter.meta.spec == 1:
-      return self.hunter.mastery.total()/100.0
-    return 0
+      base += self.hunter.mastery.total()/100.0
+    if self.hunter.meta.race in (DWARF,TAUREN):
+      base += .02
+    return base
     
   def totalcritmod(self):
     """ Takes into account increased crit chance and/or modifier unique to this spell"""
@@ -120,7 +129,8 @@ class Spell(Calc):
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
     
   def damage(self, states={}):
-    dmg = self.base() * self.totalcritmod()
+    ap = states and states['Focus Fire'].active() and 1.1 or 1
+    dmg = self.base(ap) * self.totalcritmod()
     if self.armor():
       dmg = dmg * self.armor()
     if self.buff():
@@ -170,7 +180,7 @@ class Spell(Calc):
   
   def mastery(self):
     """ Sniper training for MM """
-    if self.hunter.meta.spec == 1:
+    if self.hunter.meta.spec == MM:
       return 1+self.hunter.mastery.total()/100.0
     return 0
   
@@ -213,13 +223,25 @@ class MagicSpell(Spell):
     
   def mastery(self):
     """ Sniper training for MM, Magic damage for SV """
-    if self.hunter.meta.spec == 2: # SV
+    if self.hunter.meta.spec == SV:
       return 1+self.hunter.mastery.total()/100.0
-    return 0
+    return super(MagicSpell,self).mastery()
 
 class NoneSpell(Spell):
   name = "Pass"
   _casttime = GCD
+
+class ArcaneTorrent(Spell):
+  name = "Arcane Torrent"
+  _casttime = 0
+  _cd = 120
+  _focus = -15
+
+class Berserking(Spell):
+  name = "Berserking"
+  _casttime = 0
+  _cd = 180
+  _duration = 10
 
 class BestialWrath(Spell):
   name = "Bestial Wrath"
@@ -235,7 +257,6 @@ class RapidFire(Spell):
   _cd = 180
 
 class Stampede(Spell):
-  computable = True
   name = "Stampede"
   _duration = 20
   _cd = 300
@@ -244,13 +265,38 @@ class Fervor(Spell):
   computable = True
   name = "Fervor"
   _duration = 10
+  _casttime = 0
   _cd = 30
   _focus = -50
+  _pet_focus_gain = 50
 
 class FocusFire(Spell):
   computable = True
   name = "Focus Fire"
   _duration = 20
+  _pet_focus_gain = 6*5
+
+class TouchOfTheGrave(MagicSpell):
+  computable = True
+  name = "Touch of the Grave"
+    
+  def damage(self, states={}):
+    dmg = (1932+2244)/2
+    if self.buff():
+      dmg = dmg * self.buff()
+    if self.mastery():
+      dmg = dmg * self.mastery()
+    if self.lone():
+      dmg = dmg * self.lone()
+    if self.versatility():
+      dmg = dmg * self.versatility()
+      
+    return dmg
+  
+  def regular_hit(self, states={}):
+    """ No crit or multistrike """
+    return self.damage(states)
+  
 
 class DireBeast(PhysicalSpell):
   computable = True
@@ -266,14 +312,14 @@ class DireBeast(PhysicalSpell):
     dmg *= self.totalcritmod()
     dmg *= self.multistrike()
     dmg *= self.armor()
-    if self.hunter.meta.spec==0:
+    if self.hunter.meta.spec==BM:
       dmg *= (1+self.hunter.mastery.total()/100.0+.2)
     return dmg
   
   def regular_hit(self):
     dmg = self.ap()*self.hunter.ap()
     dmg *= self.armor()
-    if self.hunter.meta.spec==0:
+    if self.hunter.meta.spec==BM:
       dmg *= (1+self.hunter.mastery.total()/100.0+.2)
     return dmg
 
@@ -283,13 +329,14 @@ class AutoShot(PhysicalSpell):
   _weapon = 1.0
   _ap = 0
   
-  def base(self):
-    """ Base damage from AP and/or Weapon """
-    return self.hunter.weapondmg(normalize=False) * self.weapon() + self.hunter.ap() * self.ap()
-  
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
     return hasted
+  
+  def dps(self,states={}):
+    dmg = self.damage(states)
+    speed = self.speed()
+    return dmg/speed
 
 class PoisonedAmmo(MagicSpell):
   computable = True
@@ -299,6 +346,11 @@ class PoisonedAmmo(MagicSpell):
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
     return hasted
+  
+  def dps(self,states={}):
+    dmg = self.damage(states)
+    speed = self.speed()
+    return dmg/speed
 
 class ArcaneShot(MagicSpell):
   computable = True
@@ -338,7 +390,7 @@ class ChimeraShot(MagicSpell):
       # we can assume this is a MM hunter
       base = base/self.totalcritmod()
       crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2+self.hunter.mastery.total()/100.0
+      crit_mod = 2 + self.critmod()
       crit = (crit_mod * crit_chance + (1-crit_chance))
       return base * crit
     return base
@@ -370,10 +422,6 @@ class CobraShot(MagicSpell):
   _focus = -14
   _perk = 1.2
   
-  def casttime(self):
-    haste = self.hunter.haste.total()
-    return self._casttime/haste
-  
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
@@ -399,8 +447,8 @@ class KillCommand(PhysicalSpell):
   _perk = 1.2
   
   def spec(self):
-    """ Combat Experience (1.5 base, 1.7 if Versatility) """
-    return self.hunter.meta.talent7 == 2 and 1.7 or 1.5
+    """ Combat Experience (1.5 base, 1.85 if Versatility) """
+    return self.hunter.meta.talent7 == 2 and 1.85 or 1.5
     
   def mastery(self):
     """ +dmg modifier if Survival """
@@ -440,6 +488,10 @@ class SteadyShot(PhysicalSpell):
       return base * crit
     return base
   
+  def casttime(self):
+    haste = self.hunter.haste.total()
+    return self._casttime/haste
+  
 class ExplosiveTrap(MagicSpell):
   computable = True
   name = "Explosive Trap"
@@ -472,6 +524,10 @@ class Barrage(PhysicalSpell):
   _focus = 30
   _casttime = 3
   _weapon = 4.8
+  
+  def casttime(self):
+    haste = self.hunter.haste.total()
+    return self._casttime/haste
 
 class Powershot(PhysicalSpell):
   computable = True

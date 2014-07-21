@@ -12,7 +12,7 @@ class Pet(object):
     return hunter.focus_gen()
     
   def combat_experience(self,hunter):
-    return hunter.meta.talent7 == 2 and 1.7 or 1.5
+    return hunter.meta.talent7 == 2 and 1.85 or 1.5
   
   def mastery(self,hunter):
     bm_mas =  (1++hunter.mastery.total()/100.0)
@@ -59,8 +59,11 @@ class Pet(object):
     focus += time * self.focus_gen(hunter)
     return dmg,focus
   
-  def auto(self,hunter):
-    dmg = self.ap(hunter)/3.5*2 # 100% weapon damage
+  def auto(self,hunter,states={}):
+    ap = self.ap(hunter)
+    if states['Focus Fire'].active():
+      ap *= 1.1
+    dmg = ap/3.5*2 # 100% weapon damage
     dmg *= armormod()
     dmg *= self.versatility(hunter)
     dmg *= self.combat_experience(hunter)

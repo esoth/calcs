@@ -38,11 +38,10 @@ class Stat(object):
       return self._gear
   
   def food(self,value=''):
-    """ Pandarens receive double """
     if value:
       self._food = value
     else:
-      return self.hunter.race in PANDARENS and self._food*2 or self._food # Pandaren
+      return self._food
   def flask(self,value=''):
     if value:
       self._flask = value
@@ -64,7 +63,6 @@ class Stat(object):
     else:
       return self._spec
   def rating(self,value=''):
-    """ Level 90 values """
     if value:
       self._rating = value
     else:
@@ -146,7 +144,7 @@ class CritStat(Stat):
     return self.hunter.spec == 1 and 1.05 or 1
   
   def racial(self):
-    if self.hunter.race == BLOODELF:
+    if self.hunter.race in (BLOODELF,WORGEN):
       return 1
     return 0
   
@@ -159,7 +157,11 @@ class CritStat(Stat):
     return super(CritStat,self).base()
   
   def food(self):
-    return self.hunter.spec == 1 and 150 or 0
+    """ Pandarens receive double value """
+    _food = self.hunter.spec == 1 and 150 or 0
+    if self.hunter.race in PANDARENS:
+      _food *= 2
+    return _food
   
   def flask(self):
     return self.hunter.spec == 1 and 500 or 0
@@ -173,6 +175,10 @@ class HasteStat(Stat):
   _rating = 80
   _buff = 5
   
+  def racial(self):
+    """ Night Elf 1% (assume night) """
+    return self.hunter.race == NIGHTELF and .01 or 0
+  
   def buff(self):
     """ 5% haste buff """
     return super(HasteStat,self).buff()
@@ -181,12 +187,10 @@ class HasteStat(Stat):
     """ Haste works a bit different in that it's all multiplicative """
     stats = 1 + self.ratings()/float(self.rating())/100
     stats *= (1+self.buff()/100.0)
-    if self.hunter.race == NIGHTELF:
-      stats *= 1.01
+    stats *= (1 + self.racial())
     return stats
 
   def total_display(self):
-    """ Night Elves always have 1% haste """
     return '%.02f%%' % ((self.total_static()-1)*100.0)
 
 class MasteryStat(Stat):
@@ -195,7 +199,11 @@ class MasteryStat(Stat):
   _buff = 550 # this one is actually rating!
   
   def food(self):
-    return self.hunter.spec == 0 and 150 or 0
+    """ Pandarens receive double value """
+    _food = self.hunter.spec == 0 and 150 or 0
+    if self.hunter.race in PANDARENS:
+      _food *= 2
+    return _food
   
   def flask(self):
     return self.hunter.spec == 0 and 500 or 0
@@ -237,6 +245,17 @@ class VersatilityStat(Stat):
   """ 3% versatility buff """
   _rating = 130
   _buff = 3
+  
+  def racial(self):
+    return self.hunter.race == HUMAN and 100 or 0
+  
+  def ratings(self):
+    return sum([self.gear(), self.food(), self.flask(), self.racial()])
+  
+  def total_static(self):
+    """ The total at all times, before procs """
+    stats = self.ratings()/float(self.rating())
+    return stats + self.buff() + self.base()
 
 class MultistrikeStat(Stat):
   """ 5% multistrike buff """
@@ -244,7 +263,11 @@ class MultistrikeStat(Stat):
   _buff = 5
   
   def food(self):
-    return self.hunter.spec == 2 and 150 or 0
+    """ Pandarens receive double value """
+    _food = self.hunter.spec == 2 and 150 or 0
+    if self.hunter.race in PANDARENS:
+      _food *= 2
+    return _food
   
   def flask(self):
     return self.hunter.spec == 2 and 500 or 0

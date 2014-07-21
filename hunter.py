@@ -1,6 +1,6 @@
 from huntermeta import HunterMeta
 from stats import *
-from tools import tooltip
+from tools import tooltip, orc_ap
   
 class Hunter(object):  
   weaponmin = 0
@@ -23,6 +23,7 @@ class Hunter(object):
     complist = [('gear','Gear'),
                 ('flask','Flask'),
                 ('food','Food'),
+                ('racial','Racial'),
                 ('attunement','Attunement'),
                 ('spec','Special'),
                 ('buff','Buff'),
@@ -80,6 +81,9 @@ class Hunter(object):
                    'components': [{'title':'From agility',
                                    'id':'agility',
                                    'value': self.agility.total()},
+                                  {'title':'Orc racial',
+                                   'id':'racial',
+                                   'value': orc_ap()},
                                   {'title':'10% Buff',
                                    'id':'buff',
                                    'value': '110.00%',
@@ -98,15 +102,17 @@ class Hunter(object):
       if isinstance(getattr(self,k),Stat):
         getattr(self,k).gear(v)
 
-  def weapondmg(self,normalize=True):
+  def weapondmg(self,normalize=True,ap=1):
     """ Weapon damage is average of weapon's min and max, plus AP/3.5 * Weapon Speed """
     wpn = (self.weaponmin + self.weaponmax) / 2
-    ap = self.ap() / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
+    # ap parameter is bonus ap, probably from Improved Focus Fire
+    ap = self.ap() * ap / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
     return wpn + ap
   
   def ap(self):
     """ 10% AP buff """
-    return self.agility.total()*1.10
+    orc = self.meta.race == ORC and orc_ap()
+    return (self.agility.total()+orc)*1.10
   
   def focus_gen(self):
     """ Base focus generation - 4 * haste """

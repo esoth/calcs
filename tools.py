@@ -90,11 +90,21 @@ for r in json.load(urlopen('http://eu.battle.net/api/wow/realm/status'))['realms
 def tooltip(compid,value):
   if compid == 'buff':
     return '%.02f%%' % value
-  elif compid in ('attunement','spec'):
-    return value == 1 and '--' or '%.02f' % (value*100.0)
+  elif compid == 'spec':
+    return '%.02f' % (value*100.0)
+  elif compid == 'attunement':
+    return value == 1 and '--' or '%.02f%%' % (value*100.0)
   elif compid == 'spell':
     return '%.02f%%' % (value*100.0)
+  elif compid == 'racial' and value <= 100: # humans actually get a rating
+    return '%.02f%%' % value
   elif isinstance(value,float):
     return '%.02f' % value
   else:
     return value
+
+def orc_ap():
+  ap = 345
+  dur = 15
+  cd = 120
+  return ap * dur / cd

@@ -1,12 +1,15 @@
 from calcs import spells
-from calcs.tools import product
+from calcs.tools import *
 
 class State(object):
   state_id = 'Spell'
   _damage_modifier = 1
+  _pet_damage_modifier = 1
   _focus_modifier = 1
   _time_modifier = 1
+  _pet_time_modifier = 1
   _focus_gains = 0 # per sec
+  _pet_focus_gains = 0
   _duration = 0
   _stacks = 0
   _active = False
@@ -17,8 +20,12 @@ class State(object):
   
   def damage_modifier(self):
     return self._damage_modifier
+  def pet_damage_modifier(self):
+    return self._pet_damage_modifier
   def time_modifier(self):
     return self._time_modifier
+  def pet_time_modifier(self):
+    return self._pet_time_modifier
   def focus_modifier(self):
     return self._focus_modifier
   def duration(self):
@@ -29,6 +36,8 @@ class State(object):
     return self._active
   def focus_gains(self,states,time=None):
     return self._focus_gains
+  def pet_focus_gains(self,states,time=None):
+    return self._pet_focus_gains
   def uptime(self):
     return self._uptime
  
@@ -53,29 +62,27 @@ class State(object):
       tt += ", +focus: %.02f" % self.focus_gains(states,time)
     return tt
  
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     pass
 
 class BestialWrathState(State):
   computable = True
   state_id = 'Bestial Wrath'
   _damage_modifier = 1.1
+  _pet_damage_modifier = 1.2
   _focus_modifier = 0.5
-  _active = False
-  _time_modifier = 1
   _duration = 10
-  _stacks = 1
-  
-  def stacks(self):
-    return self.active() and 1 or 0
   
   def damage_modifier(self):
     return self.active() and self._damage_modifier or 1
   
+  def petdamage_modifier(self):
+    return self.active() and self._pet_damage_modifier or 1
+  
   def focus_modifier(self):
     return self.active() and self._focus_modifier or 1
  
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == self.state_id:
       self._duration = spells.BestialWrath(self.hunter).duration() # the behavior of this spell class is outside the scope of this
       self._active = True
@@ -86,6 +93,72 @@ class BestialWrathState(State):
     else:
       self._uptime += time
 
+class GoForTheThroat(State):
+  computable = True
+  state_id = 'Invigoration (Go for the Throat)'
+  _timer = 0
+
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    t_modifier = product([s.time_modifier() for s in states.values()])
+    if self.active(): # reset
+      self._timer = self._timer - self.time_to_proc()
+    self._timer += time * t_modifier
+ 
+  def active(self):
+    if self.hunter.meta.spec == BM:
+      return self._timer >= self.time_to_proc()
+ 
+  def time_to_proc(self):
+    # multiply time by by t_modifier? Then
+    speed = self.hunter.weaponspeed/self.hunter.haste.total()
+    crit = self.hunter.crit.total()/100.0
+    return speed/crit
+  
+  def pet_focus_gains(self,states,time):
+    return self.active() and 15 or 0
+
+class Invigoration(State):
+  computable = True
+  state_id = 'Invigoration'
+  _timer = 0
+ 
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if self.active(): # reset
+      self._timer = self._timer - self.time_to_proc()
+   
+    if pet_basic:
+      self._timer += 1
+ 
+  def time_to_proc(self):
+    return 1/.15
+ 
+  def active(self):
+    return self._timer >= self.time_to_proc()
+   
+  def focus_gains(self,states,time):
+    if self.active():
+      return 20
+    else:
+      return 0
+
+class LockAndLoadProc(State):
+  computable = True
+  state_id = 'Lock and Load (proc)'
+  _timer = 0
+  
+  def time_to_proc(self):
+    ms = 2.0 * self.hunter.multistrike.total() / 100.0 / 3.0 # 2 chances every 3 seconds
+    return 1/ms
+ 
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if self._timer >= self.time_to_proc(): # reset
+      self._timer -= self.time_to_proc()
+    if states['Black Arrow'].active():
+      self._timer += time
+  
+  def active(self):
+    return self._timer >= self.time_to_proc()
+
 class LockAndLoadState(State):
   computable = True
   state_id = 'Lock and Load'
@@ -94,9 +167,9 @@ class LockAndLoadState(State):
   _stacks = 0
  
   # going to need a class of procs to pass here
-  def update_state(self,time,actionid,procs,boss_health):
-    lnl = procs['Lock and Load']
-    if lnl.activate():
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    lnl = states['Lock and Load (proc)']
+    if lnl.active():
       self._stacks += 1
       self._duration = 15
      
@@ -112,12 +185,11 @@ class RapidFire(State):
   _time_modifier = 1.4
   _active = False
   _duration = 15
-  _stacks = 1
  
   def time_modifier(self):
     return self.active() and self._time_modifier or 1
  
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == self.state_id:
       self._duration = spells.RapidFire(self.hunter).duration()
       self._active = True
@@ -126,13 +198,50 @@ class RapidFire(State):
     if self.duration() < 0:
       self._active = False
 
+class FocusFireState(State):
+  computable = True
+  state_id = 'Focus Fire'
+  _time_modifier = 1.2
+  _active = False
+  _duration = 20
+ 
+  def time_modifier(self):
+    return self.active() and self._time_modifier or 1
+ 
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if actionid == self.state_id:
+      self._duration = spells.FocusFire(self.hunter).duration()
+      self._active = True
+    else:
+      self._duration -= time
+    if self.duration() < 0:
+      self._active = False
+
+class Berserking(State):
+  computable = True
+  state_id = 'Berserking'
+  _time_modifier = 1.15
+  _duration = -1
+ 
+  def time_modifier(self):
+    return self.active() and self._time_modifier or 1
+ 
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if actionid == self.state_id:
+      self._duration = spells.Berserking(self.hunter).duration()
+    else:
+      self._duration -= time
+      
+  def active(self):
+    return self.duration() >= 0
+
 class BlackArrowState(State):
   computable = True
   state_id = 'Black Arrow'
   _duration = 0
   _stacks = 1
  
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == self.state_id:
       self._duration = spells.BlackArrow(self.hunter).duration()
       self._active = True
@@ -150,7 +259,7 @@ class SerpentStingState(State):
   _total = 0
   _duration = 0
 
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == 'Arcane Shot':
       self._duration = spells.SerpentSting(self.hunter).duration()
       self._active = True
@@ -163,12 +272,32 @@ class SerpentStingState(State):
   def total(self):
     return self._total
 
+class ThrillOfTheHuntState(State):
+  computable = True
+  state_id = 'Thrill of the Hunt'
+  _counter = float(0)
+  _stacks = 0
+
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if self.hunter.meta.talent4 == TIER4.index(THRILLOFTHEHUNT):
+      if self.active() and actionid in ('Arcane Shot','Aimed Shot','Multi-Shot'):
+        self._stacks -= 1
+      if actionid in ('Arcane Shot','Aimed Shot','Kill Command','A Murder of Crows','Explosive Shot','Black Arrow',
+                      'Chimera Shot','Glaive Toss','Barrage','Powershot','Multi-Shot'):
+        self._counter += .3
+      if self._counter > 1: # reset and add stacks
+        self._counter -= 1
+        self._stacks = 3
+  
+  def active(self):
+    return bool(self.stacks())
+
 class CarefulAimState(State):
   computable = True
   state_id = 'Careful Aim'
   _active = False
 
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     self._active = boss_health >= .8
 
 class KillShotState(State):
@@ -176,7 +305,7 @@ class KillShotState(State):
   state_id = 'Kill Shot'
   _active = False
 
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     self._active = boss_health <= .35
 
 class KillShotDouble(State):
@@ -184,7 +313,7 @@ class KillShotDouble(State):
   state_id = 'Kill Shot Double'
   _active = True
 
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == 'Kill Shot':
       self._active = not self._active
 
@@ -202,7 +331,7 @@ class DireBeast(State):
   def stack_amount(self):
     return int(15/self.speed())+1
 
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == self.state_id:
       self._stacks = self.stack_amount()
       self._timer = self.speed()
@@ -222,60 +351,53 @@ class DireBeast(State):
     else:
       return 0
 
+class FrenzyState(State):
+  computable = True
+  state_id = 'Frenzy'
+  _stacks = 0
+  _counter = 0.0
+
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if actionid == 'Focus Fire':
+      self._counter = 0
+    if pet_basic:
+      self._counter += .4
+  
+  def stacks(self):
+    return min(int(self._counter),5)
+  
+  def active(self):
+    return self.stacks()>=1
+ 
+  def pet_time_modifier(self):
+    return self.stacks()*.04+1
+
 class Fervor(State):
   computable = True
   state_id = 'Fervor'
   _active = False
+  _max = 0
+  _gain = 0
 
-  def update_state(self,time,actionid,procs,boss_health):
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == self.state_id:
-      self._duration = spells.Fervor(self.hunter).duration()
+      #self._duration = spells.Fervor(self.hunter).duration()
       self._active = True
+      self._max = 50
+    elif self.active():
+      self._gain = min(5.0*time,self._max) # so that we don't end up gaining ~52 focus due to timing
+      self._max -= 5.0*time
     else:
-      self._duration -= time
-    if self.duration() < 0:
-      self._active = False
+      self._gain = 0
  
   def focus_gains(self,states,time):
-    if self.active():
-      return 5.0*time
-    else:
-      return 0
-
-class ViperVenomState(State):
-  computable = True
-  state_id = 'Viper Venom'
-  _active = False
-  _starting_counter = 3
-  _counter = _starting_counter
- 
-  def update_state(self,time,actionid,procs,boss_health):
-    ss = procs['Viper Venom']
-    if ss.activate():
-      self._active = True
-    else:
-      self._active = False
- 
-  def focus_gains(self,states,time):
-    if self.active():
-      return 6
-
-class FrenzyState(State):
-  computable = True
-  state_id = 'Frenzy'
-  _counter = 0
- 
-  def update_state(self,time,actionid,procs,boss_health):
-    if actionid == 'Focus Fire':
-      self._counter = 0
-    else:
-      self._counter += time
-      self._counter_to_proc = self._counter
-   
-    self._counter_to_proc += time
- 
-  def stacks(self):
-    return 2/.4*self._counter
+    return self._gain
+  
+  def pet_focus_gains(self,states,time):
+    return self._gain
+      
+  def active(self):
+    return self._max > 0
           
       
       

@@ -34,56 +34,6 @@ class Proc(object):
  
   def update_state(self,time,actionid,states):
     pass
-
-class LockAndLoadProc(Proc):
-  computable = True
-  proc_id = 'Lock and Load'
-  _counter_to_proc = None
-  
-  def time_to_proc(self):
-    ms = 2.0 * self.hunter.multistrike.total() / 100.0 / 3.0
-    return 1/ms
- 
-  def update_state(self,time,actionid,states):
-    if self._counter_to_proc <= 0:
-      self._counter_to_proc = self.time_to_proc()
-    if states['Black Arrow'].active():
-      self._counter_to_proc -= time
-  
-  def activate(self):
-    return self._counter_to_proc <= 0
-
-class ViperVenomProc(Proc):
-  computable = True
-  proc_id = 'Viper Venom'
-  _start_counter = 3
-  _counter_to_proc = 3
- 
-  def update_state(self,time,actionid,states):
-    if self._counter_to_proc < 0: # reset if just proc'd
-      self._counter_to_proc = self._start_counter
-
-    if states['Serpent Sting'].active():
-      self._counter_to_proc -= time
- 
-  def activate(self):
-    return self._counter_to_proc <= 0
-
-class DireBeastProc(Proc):
-  computable = True
-  proc_id = 'Dire Beast'
-  _start_counter = 2
-  _counter_to_proc = 2 # first one goes out right away
- 
-  def update_state(self,time,actionid,states):
-    if self._counter_to_proc < 0: # reset if just proc'd
-      self._counter_to_proc = self._start_counter
-
-    if states['Dire Beast'].active():
-      self._counter_to_proc -= time
- 
-  def activate(self):
-    return self._counter_to_proc <= 0
       
       
 import inspect, sys
