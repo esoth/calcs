@@ -115,7 +115,7 @@ class Spell(Calc):
     if self.hunter.meta.spec == 1:
       base += self.hunter.mastery.total()/100.0
     if self.hunter.meta.race in (DWARF,TAUREN):
-      base += .02
+      base += .04
     return base
     
   def totalcritmod(self):
@@ -281,6 +281,7 @@ class TouchOfTheGrave(MagicSpell):
   name = "Touch of the Grave"
     
   def damage(self, states={}):
+    """ Unknown proc rate. Set to 30s for now """
     dmg = (1932+2244)/2
     if self.buff():
       dmg = dmg * self.buff()
@@ -290,11 +291,12 @@ class TouchOfTheGrave(MagicSpell):
       dmg = dmg * self.lone()
     if self.versatility():
       dmg = dmg * self.versatility()
+    modifiers = product([s.damage_modifier() for s in states.values()])
+    dmg *= modifiers
       
     return dmg
   
   def regular_hit(self, states={}):
-    """ No crit or multistrike """
     return self.damage(states)
   
 

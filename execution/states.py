@@ -351,6 +351,46 @@ class DireBeast(State):
     else:
       return 0
 
+class TouchOfTheGraveProc(State):
+  computable = True
+  state_id = 'Touch of the Grave'
+  _counter = 0
+  _total = 0
+  _proc = 0
+    
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if self._proc >= 30 and self.hunter.meta.race == UNDEAD:
+      self._proc -= 30   
+      spell = spells.TouchOfTheGrave(self.hunter).damage(states)
+      self._counter += 1
+      self._total += spell
+    self._proc += time
+  
+  def counter(self):
+    return self._counter
+  def total(self):
+    return self._total
+
+class ImprovedAimedShotState(State):
+  computable = True
+  state_id = 'Improved Aimed Shot'
+  _counter = 0.0
+
+  def update_state(self,time,actionid,states,pet_basic,boss_health):
+    if self._counter > 1:
+      self._counter -= 1
+    if actionid == 'AimedShot' and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
+      # we can assume this is a MM hunter
+      base = base/self.totalcritmod()
+      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
+      self._counter += crit_chance
+  
+  def active(self):
+    return self._counter >= 1
+ 
+  def focus_gains(self,states,time):
+    return self.active() and 20 or 0
+
 class FrenzyState(State):
   computable = True
   state_id = 'Frenzy'

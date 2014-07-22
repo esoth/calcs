@@ -121,10 +121,15 @@ def runsingle(hunter,lastcalc):
         time_sum += time
         dmg_sum += dmg
         break
-
+  
   dmg_sum += auto_sum
   shot_counts['Auto Shot'] = {'counter':'--',
                               'total':auto_sum,}
+  totg = states['Touch of the Grave'].total()
+  if totg:
+    dmg_sum += totg
+    shot_counts['Touch of the Grave'] = {'counter':states['Touch of the Grave'].counter(),
+                                         'total':totg,}
   if hunter.meta.talent7 == TIER7.index(EXOTICMUNITIONS):
     dmg_sum += poison_sum
     shot_counts['Poison Ammo'] = {'counter':'--',
