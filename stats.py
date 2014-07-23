@@ -113,7 +113,7 @@ class AgilityStat(Stat):
                TROLL:1286,
                GOBLIN:1286,
                BLOODELF:1286,
-               DRAENEI:1415,
+               DRAENEI:1349,
                WORGEN:1286,
                PANDAREN:1282}
     return racemap[self.hunter.race]

@@ -424,6 +424,8 @@ class Fervor(State):
       self._duration = spells.Fervor(self.hunter).duration()
     if self.active():
       self._max -= 5.0*time
+    else:
+      self._max = 50
     self._duration -= time
  
   def focus_gains(self,states,time):
