@@ -50,9 +50,10 @@ class ArcaneShotCondition(Condition):
   computable = True
 
   def validate(self, cds, states, focus, time):
+    buffer = 0
     spell = ArcaneShot(self.hunter)
     # spell.focus() this is a minimum if we allow focus pooling to be customized
-    checks = [focus >= 40 or (states['Bestial Wrath'].active() and focus >= 20) or (states['Thrill of the Hunt'].active() and focus >= 20)]
+    checks = [focus >= 30+buffer or (states['Bestial Wrath'].active() and focus >= 15) or (states['Thrill of the Hunt'].active() and focus >= 10+buffer)]
     return False not in checks
 
 class CobraShotCondition(Condition):

@@ -416,28 +416,26 @@ class Fervor(State):
   computable = True
   state_id = 'Fervor'
   _active = False
-  _max = 0
-  _gain = 0
+  _duration = 0
+  _max = 50
 
   def update_state(self,time,actionid,states,pet_basic,boss_health):
     if actionid == self.state_id:
-      #self._duration = spells.Fervor(self.hunter).duration()
-      self._active = True
-      self._max = 50
-    elif self.active():
-      self._gain = min(5.0*time,self._max) # so that we don't end up gaining ~52 focus due to timing
+      self._duration = spells.Fervor(self.hunter).duration()
+    if self.active():
       self._max -= 5.0*time
-    else:
-      self._gain = 0
+    self._duration -= time
  
   def focus_gains(self,states,time):
-    return self._gain
+    if self.active():
+      return min(self._max,5.0*time)
   
   def pet_focus_gains(self,states,time):
-    return self._gain
+    if self.active():
+      return min(self._max,5.0*time)
       
   def active(self):
-    return self._max > 0
+    return self._duration > 0
           
       
       

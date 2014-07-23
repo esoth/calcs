@@ -172,12 +172,12 @@ class CritStat(Stat):
 
 class HasteStat(Stat):
   """ 5% haste buff """
-  _rating = 80
+  _rating = 100
   _buff = 5
   
   def racial(self):
-    """ Night Elf 1% (assume night) """
-    return self.hunter.race == NIGHTELF and .01 or 0
+    """ Night Elf 1% (assume night), Goblin """
+    return self.hunter.race in (NIGHTELF,GOBLIN,) and .01 or 0
   
   def buff(self):
     """ 5% haste buff """
@@ -262,19 +262,23 @@ class MultistrikeStat(Stat):
   _rating = 66
   _buff = 5
   
+  def base(self):
+    """ SV starts at 10 """
+    return self.hunter.spec == SV and 10 or 0
+  
   def food(self):
     """ Pandarens receive double value """
-    _food = self.hunter.spec == 2 and 150 or 0
+    _food = self.hunter.spec == SV and 150 or 0
     if self.hunter.race in PANDARENS:
       _food *= 2
     return _food
   
   def flask(self):
-    return self.hunter.spec == 2 and 500 or 0
+    return self.hunter.spec == SV and 500 or 0
 
   def attunement(self):
     """ 5% more multistrike from rating sources for SV """
-    return self.hunter.spec == 2 and 1.05 or 1
+    return self.hunter.spec == SV and 1.05 or 1
 
 class Proc(Calc):
   rppm = 1.0
