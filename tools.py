@@ -88,7 +88,7 @@ for r in json.load(urlopen('http://eu.battle.net/api/wow/realm/status'))['realms
     SERVERS.append((r['slug'],r['name']))
     
 def tooltip(compid,value):
-  if compid == 'buff':
+  if compid in ('buff','armor',):
     return '%.02f%%' % value
   elif compid == 'spec':
     return '%.02f' % (value*100.0)

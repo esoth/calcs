@@ -222,6 +222,17 @@ class KillShotCondition(Condition):
               states['Kill Shot'].active()]
     return False not in checks
 
+class ExplosiveTrapCondition(Condition):
+  title = "Explosive Trap - off cd, not active"
+  id = 'ET'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    spell = ExplosiveTrap(self.hunter)
+    checks = [cds['Explosive Trap'].cdtime <= 0 or False,
+              not states['Explosive Trap'].active()]
+    return False not in checks
+
 class DireBeastCondition(Condition):
   title = "Dire Beast - talented and off CD"
   id = 'DB'
@@ -252,6 +263,35 @@ class FocusFireCondition(Condition):
 
   def validate(self, cds, states, focus, time):
     checks = [states['Frenzy'].stacks() == 5]
+    return False not in checks
+
+class MultiShotCondition(Condition):
+  title = "MultiShot condition: 40 focus or 20 focus and BW/Bombardment"
+  id = 'MS'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    spell = MultiShot(self.hunter)
+
+    checks = [focus >= spell.focus() or (states['Bestial Wrath'].active() and focus >= spell.focus()/2) or (states['Bombardment'].active() and focus >= spell.focus()/2)]
+    return False not in checks
+
+class BombardmentCondition(Condition):
+  title = "Bombardment: if this is falling off, prioritize Multi-Shot"
+  id = 'Bb'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    checks = [states['Bombardment'].duration() <= 2]
+    return False not in checks
+
+class BeastCleaveCondition(Condition):
+  title = "Beast Cleave: if this is falling off, prioritize Multi-Shot"
+  id = 'Beast Cleave'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    checks = [states['Beast Cleave'].duration() <= 2]
     return False not in checks
 
 

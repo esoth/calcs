@@ -19,6 +19,7 @@ class Spell(Calc):
   _cd = 0
   _duration = 0
   _perk = 0
+  _aoe = 0 # other targets take this percent
   
   def weapon(self):
     return self._weapon
@@ -40,6 +41,8 @@ class Spell(Calc):
     return self._cd
   def duration(self):
     return self._duration
+  def aoe(self):
+    return self._aoe
   
   def attributes(self):
     _attributes = []
@@ -58,7 +61,7 @@ class Spell(Calc):
                        ('focus','Focus cost'),
                        ('cd','Cooldown'),
                        ('damage','Damage'),
-                       ('dps','DPS'),
+                       ('dps','DPCT'),
                        ('regular_hit','Regular hit'))
     
     for attrid,attrtitle in _attributeslist:
@@ -354,6 +357,21 @@ class PoisonedAmmo(MagicSpell):
     speed = self.speed()
     return dmg/speed
 
+class IncendiaryAmmo(MagicSpell):
+  computable = True
+  name = "Incendiary Ammo (Exotic Ammunitions)"
+  _weapon = .2
+  _aoe = 1
+
+  def speed(self):
+    hasted = self.hunter.weaponspeed/self.hunter.haste.total()
+    return hasted
+
+  def dps(self,states={}):
+    dmg = self.damage(states)
+    speed = self.speed()
+    return dmg/speed
+
 class ArcaneShot(MagicSpell):
   computable = True
   name = "Arcane Shot"
@@ -385,17 +403,6 @@ class ChimeraShot(MagicSpell):
   _casttime = GCD
   _focus = 35
   _cd = 9
- 
-  def damage(self, states={}):
-    base = super(ChimeraShot,self).damage(states)
-    if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
-      # we can assume this is a MM hunter
-      base = base/self.totalcritmod()
-      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2 + self.critmod()
-      crit = (crit_mod * crit_chance + (1-crit_chance))
-      return base * crit
-    return base
 
 class AimedShot(PhysicalSpell):
   computable = True
@@ -410,8 +417,8 @@ class AimedShot(PhysicalSpell):
     if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
       # we can assume this is a MM hunter
       base = base/self.totalcritmod()
-      crit_chance = min(self.critchance() + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2+self.hunter.mastery.total()/100.0
+      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
+      crit_mod = 2 + self.critmod()
       crit = (crit_mod * crit_chance + (1-crit_chance))
       return base * crit
     return base
@@ -453,23 +460,33 @@ class KillCommand(PhysicalSpell):
     return self.hunter.meta.talent7 == 2 and 1.85 or 1.5
     
   def mastery(self):
-    """ +dmg modifier if Survival """
-    if self.hunter.meta.spec == 0: # BM
-      return (1+self.hunter.mastery.total()/100.0)
-    return 0
+    """ +dmg modifier if BM """
+    return self.hunter.meta.spec == BM and (1+self.hunter.mastery.total()/100.0) or 0
 
 class MultiShot(PhysicalSpell):
   computable = True
   name = "Multi-Shot"
-  _focus = 40
+  _focus = 35
   _weapon = .3
+  _perk = 1.2
+  _aoe = 1
 
+  def damage(self,states={}):
+    base = super(MultiShot,self).damage(states)
+    return states and states['Bombardment'].active() and base*1.6 or base
 
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
   _ap = 1.256
   _duration = 15
+  _perk = 1.2
+  
+  def instant(self):
+    if self.hunter.meta.spec != 2:
+      return 0
+    else:
+      return self.dps() / 5
 
 class SteadyShot(PhysicalSpell):
   computable = True
@@ -484,8 +501,8 @@ class SteadyShot(PhysicalSpell):
     if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
       # we can assume this is a MM hunter
       base = base/self.totalcritmod()
-      crit_chance = min(self.critchance() + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2+self.hunter.mastery.total()/100.0
+      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
+      crit_mod = 2 + self.critmod()
       crit = (crit_mod * crit_chance + (1-crit_chance))
       return base * crit
     return base
@@ -501,6 +518,7 @@ class ExplosiveTrap(MagicSpell):
   _ap = .0427 * 11
   _duration = 20
   _spec = 1.3
+  _aoe = 1
 
   def cd(self):
     if self.hunter.meta.spec == 2:
@@ -514,6 +532,7 @@ class GlaiveToss(PhysicalSpell):
   _focus = 15
   _ap = .361 * 4 * 2
   _cd = 15
+  _aoe = .25
   
   def ap(self):
     """ 36.1% * 2 (two glaives) * 4 (primary target). """
@@ -526,6 +545,7 @@ class Barrage(PhysicalSpell):
   _focus = 30
   _casttime = 3
   _weapon = 4.8
+  _aoe = .25
   
   def casttime(self):
     haste = self.hunter.haste.total()
@@ -538,6 +558,7 @@ class Powershot(PhysicalSpell):
   _casttime = 2.25
   _focus = 15
   _cd = 45
+  _aoe = .25
 
 class MurderOfCrows(PhysicalSpell):
   computable = True
@@ -545,6 +566,10 @@ class MurderOfCrows(PhysicalSpell):
   _ap = .65 * 30 # http://www.esoth.com/blog/warlords-of-draenor-hunter-theorycrafting
   _cd = 120
   _focus = 60
+    
+  def mastery(self):
+    """ +dmg modifier if BM or MM"""
+    return self.hunter.meta.spec in (BM, MM,) and (1+self.hunter.mastery.total()/100.0) or 0
 
 class FocusingShot(PhysicalSpell):
   computable = True
