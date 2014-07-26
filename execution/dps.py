@@ -72,7 +72,7 @@ def runner(hunter,aoe=0,lastcalc=0):
         poison_dmg = PoisonedAmmo(hunter).dps(states) * time * t_modifiers * modifiers
         poison_sum += poison_dmg
         incend_dmg = IncendiaryAmmo(hunter).dps(states) * aoe * time * t_modifiers * modifiers
-        incend_sum += incend_sum
+        incend_sum += incend_dmg
         if spell_id == 'Arcane Shot':
           serpent_sum += spells.SerpentSting(hunter).instant() * modifiers
         elif spell_id == 'Multi-Shot':

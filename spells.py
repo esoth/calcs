@@ -128,8 +128,8 @@ class Spell(Calc):
     return (crit_mod * crit_chance + (1-crit_chance))
   
   def lone(self):
-    """ Lone Wolf (Versatility) talent """
-    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
+    """ Lone Wolf talent """
+    return 1
     
   def damage(self, states={}):
     ap = states and states['Focus Fire'].active() and 1.1 or 1
@@ -239,6 +239,10 @@ class ArcaneTorrent(Spell):
   _casttime = 0
   _cd = 120
   _focus = -15
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
 
 class Berserking(Spell):
   name = "Berserking"
@@ -334,6 +338,10 @@ class AutoShot(PhysicalSpell):
   _weapon = 1.0
   _ap = 0
   
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
+  
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
     return hasted
@@ -379,6 +387,10 @@ class ArcaneShot(MagicSpell):
   _casttime = GCD
   _focus = 30
   _perk = 1.2
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
 
 class BlackArrow(MagicSpell):
   computable = True
@@ -391,6 +403,10 @@ class BlackArrow(MagicSpell):
   _perk = 1.2
   _spec = 1.3
   _duration = 20
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
 
   def spec(self):
     """ Trap Mastery """
@@ -403,6 +419,10 @@ class ChimeraShot(MagicSpell):
   _casttime = GCD
   _focus = 35
   _cd = 9
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
 
 class AimedShot(PhysicalSpell):
   computable = True
@@ -411,6 +431,10 @@ class AimedShot(PhysicalSpell):
   _casttime = 2.5
   _focus = 50
   _perk = 1.2
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
  
   def damage(self, states={}):
     base = super(AimedShot,self).damage(states)
@@ -431,6 +455,10 @@ class CobraShot(MagicSpell):
   _focus = -14
   _perk = 1.2
   
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
+  
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
@@ -438,6 +466,10 @@ class ExplosiveShot(MagicSpell):
   _casttime = GCD
   _focus = 15
   _cd = 6
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
 
 class KillShot(PhysicalSpell):
   computable = True
@@ -445,6 +477,10 @@ class KillShot(PhysicalSpell):
   _weapon = 5.5
   _casttime = GCD
   _cd = 10
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
 
 class KillCommand(PhysicalSpell):
   computable = True
@@ -495,6 +531,10 @@ class SteadyShot(PhysicalSpell):
   _casttime = 2
   _weapon = .35
   _perk = 1.2
+  
+  def lone(self):
+    """ Lone Wolf talent """
+    return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
  
   def damage(self, states={}):
     base = super(SteadyShot,self).damage(states)
