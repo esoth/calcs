@@ -69,8 +69,6 @@ class Spell(Calc):
       to_double = ('speed','base','damage','dps','regular_hit',)
       func = getattr(self,attrid)
       value = getattr(self,attrid)()
-      if attrid == 'armor':
-        value *= 100
       if attrid in to_pretty:
         value = tooltip('spell',value)
       elif attrid in to_double:
@@ -81,7 +79,8 @@ class Spell(Calc):
       attr['klass'] = u'%s_%s' % (attrid,self.__class__.__name__)
       if func.func_doc and func.func_doc.strip():
         attr['description'] = func.func_doc.strip()
-      _attributes.append(attr)
+      if getattr(self,attrid)() or attrid != 'armor': # don't show 0 armor
+        _attributes.append(attr)
     
     if self.lone():
       attr = {'id':'lone',

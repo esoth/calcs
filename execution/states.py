@@ -85,13 +85,13 @@ class BestialWrathState(State):
   def update_state(self,time,actionid,states,pet_basic,boss_health,aoe=0):
     if actionid == self.state_id:
       self._duration = spells.BestialWrath(self.hunter).duration() # the behavior of this spell class is outside the scope of this
-      self._active = True
     else:
       self._duration -= time
-    if self.duration() < 0:
-      self._active = False
-    else:
+    if self.active():
       self._uptime += time
+  
+  def active(self):
+    return self.duration() > 0
 
 class GoForTheThroat(State):
   computable = True
@@ -192,11 +192,11 @@ class RapidFire(State):
   def update_state(self,time,actionid,states,pet_basic,boss_health,aoe=0):
     if actionid == self.state_id:
       self._duration = spells.RapidFire(self.hunter).duration()
-      self._active = True
     else:
       self._duration -= time
-    if self.duration() < 0:
-      self._active = False
+   
+  def active(self):
+    return self.duration() > 0
 
 class FocusFireState(State):
   computable = True
@@ -211,11 +211,11 @@ class FocusFireState(State):
   def update_state(self,time,actionid,states,pet_basic,boss_health,aoe=0):
     if actionid == self.state_id:
       self._duration = spells.FocusFire(self.hunter).duration()
-      self._active = True
     else:
       self._duration -= time
-    if self.duration() < 0:
-      self._active = False
+  
+  def active(self):
+    return self.duration() > 0
 
 class Berserking(State):
   computable = True
@@ -233,7 +233,7 @@ class Berserking(State):
       self._duration -= time
       
   def active(self):
-    return self.duration() >= 0
+    return self.duration() > 0
 
 class BlackArrowState(State):
   computable = True
@@ -287,6 +287,20 @@ class SerpentStingState(State):
   
   def total(self):
     return self._total
+
+class EmpoweredBasicAttackState(State):
+  computable = True
+  state_id = 'Empowered Basic Attack'
+  _counter = 0.0
+
+  def update_state(self,time,actionid,states,pet_basic,boss_health,aoe=0):
+    if self.active(): # reset
+      self._counter = 0.0
+    if pet_basic:
+      self._counter += .2
+ 
+  def active(self):
+    return self._counter >= 1
 
 class BombardmentState(State):
   computable = True
@@ -387,8 +401,6 @@ class DireBeast(State):
     if actionid == self.state_id:
       self._stacks = self.stack_amount()
       self._timer = self.speed()
-      #self._duration = spells.DireBeast(self.hunter).duration()
-      #self._active = True
     elif self._stacks:
       self._timer -= time
   

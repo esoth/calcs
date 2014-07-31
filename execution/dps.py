@@ -73,10 +73,8 @@ def runner(hunter,aoe=0,lastcalc=0):
         poison_sum += poison_dmg
         incend_dmg = IncendiaryAmmo(hunter).dps(states) * aoe * time * t_modifiers * modifiers
         incend_sum += incend_dmg
-        if spell_id == 'Arcane Shot':
+        if spell_id in ('Arcane Shot','Multi-Shot',):
           serpent_sum += spells.SerpentSting(hunter).instant() * modifiers
-        elif spell_id == 'Multi-Shot':
-          serpent_sum += spells.SerpentSting(hunter).instant() * aoe * modifiers
 
         # pet stuff
         p_modifiers = product([s.pet_damage_modifier() for s in states.values()])
@@ -152,12 +150,10 @@ def runner(hunter,aoe=0,lastcalc=0):
       dmg_sum += incend_sum
       shot_counts['Incendiary Ammo'] = {'counter':'--',
                                         'total':incend_sum}
-      dmg_sum += incend_sum
     else:
       dmg_sum += poison_sum
       shot_counts['Poison Ammo'] = {'counter':'--',
                                     'total':poison_sum}
-      dmg_sum += poison_dmg
   if hunter.meta.talent7 != TIER7.index(VERSATILITY) or hunter.meta.spec == BM:
     shot_counts['Pet (auto)'] = {'counter':'--',
                                  'total':pet_auto_sum}
@@ -168,10 +164,10 @@ def runner(hunter,aoe=0,lastcalc=0):
     dmg_sum += pet_basic_sum
   if hunter.meta.spec == SV:
     uptime = states['Serpent Sting'].uptime()
-    serpent_dot = spells.SerpentSting(hunter).dps()/15 * uptime # this method is really DPCT
+    serpent_sum += spells.SerpentSting(hunter).dps()/15 * uptime # this method is really DPCT
     if aoe:
-      serpent_dot *= aoe
-    dmg_sum += serpent_sum + serpent_dot
+      serpent_sum *= aoe
+    dmg_sum += serpent_sum
     shot_counts['Serpent Sting'] = {'counter':'--',
                                     'total':serpent_sum}
   if hunter.meta.spec == BM and aoe:

@@ -44,18 +44,24 @@ class Pet(object):
   
   def do_basic(self,hunter,focus,time,states,pet_states):
     dmg = 0
+    emp = False
     if hunter.meta.spec in (1,2,) and hunter.meta.talent7 == 2:
       return dmg,focus
+    if states['Empowered Basic Attack'].active():
+      self._counter = 0
+      emp = True
     if self._counter > 0:
       self._counter -= time
     else:
       self._counter = self._cooldown
       if focus >= 50:
         dmg = self.basic(hunter, states, pet_states) * 2
-        focus -= 50
+        if not emp:
+          focus -= 50
       elif focus >= 25:
         dmg = self.basic(hunter, states, pet_states)
-        focus -= 25
+        if not emp:
+          focus -= 25
     focus += time * self.focus_gen(hunter)
     return dmg,focus
   
