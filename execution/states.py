@@ -71,7 +71,7 @@ class BestialWrathState(State):
   _damage_modifier = 1.1
   _pet_damage_modifier = 1.2
   _focus_modifier = 0.5
-  _duration = 10
+  _duration = 0
   
   def damage_modifier(self):
     return self.active() and self._damage_modifier or 1

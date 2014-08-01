@@ -631,5 +631,6 @@ def do_spells(meta, hunter):
   for name,klass in _spells:
     spell = klass(hunter)
     spelltable.append({'name':spell.name,
+                       'id':spell.name.lower().replace(' ','-'),
                        'attributes':spell.attributes()})
   return spelltable
