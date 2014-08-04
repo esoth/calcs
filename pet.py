@@ -1,5 +1,4 @@
-#Bite: .168 AP
-from tools import armormod
+from tools import *
 
 class Pet(object):
   _cooldown = 3
@@ -10,6 +9,11 @@ class Pet(object):
   
   def focus_gen(self,hunter):
     return hunter.focus_gen()
+  
+  def critmod(self,hunter):
+    crit_chance = min(hunter.crit.total()/100.0,1)
+    crit_mod = 2.00
+    return (crit_mod * crit_chance + (1-crit_chance))
     
   def combat_experience(self,hunter):
     return hunter.meta.talent7 == 2 and 1.85 or 1.5
@@ -20,12 +24,27 @@ class Pet(object):
   
   def versatility(self,hunter):
     return (1+hunter.versatility.total()/100.0)
-
-  def basic(self,hunter,states,pet_states):
+  
+  def multistrike(self,hunter):
+    mchance = hunter.multistrike.total()/100.0
+    return 1+.6*mchance
+  
+  def base(self,hunter,states={}):
     ap = self.ap(hunter)
+    if states and states['Focus Fire'].active():
+      ap *= 1.1
+    dmg = ap/3.5*2 # 100% weapon damage
+    return dmg
+
+  def basic(self,hunter,states={}):
+    ap = self.ap(hunter)
+    if states and states['Focus Fire'].active():
+      ap *= 1.1
     
     dmg = ap
     dmg *= armormod()
+    dmg *= self.critmod(hunter)
+    dmg *= self.multistrike(hunter)
     dmg *= self.versatility(hunter)
     dmg *= self.combat_experience(hunter)
     dmg *= self.mastery(hunter)
@@ -37,47 +56,122 @@ class Pet(object):
     if hunter.meta.talent5 == 1:
       dmg *= 1.5
     
-    if states['Bestial Wrath'].active():
+    if states and states['Bestial Wrath'].active():
       dmg *= 1.2
 
     return dmg
   
-  def do_basic(self,hunter,focus,time,states,pet_states):
+  def do_basic(self,hunter,focus,time,states):
     dmg = 0
     emp = False
-    if hunter.meta.spec in (1,2,) and hunter.meta.talent7 == 2:
+    if hunter.meta.spec in (MM,SV,) and hunter.meta.talent7 == 2:
       return dmg,focus
-    if states['Empowered Basic Attack'].active():
+    if states['Enhanced Basic Attacks'].active():
       self._counter = 0
       emp = True
     if self._counter > 0:
       self._counter -= time
     else:
-      self._counter = self._cooldown
       if focus >= 50:
-        dmg = self.basic(hunter, states, pet_states) * 2
+        self._counter = self._cooldown
+        dmg = self.basic(hunter, states) * 2
         if not emp:
           focus -= 50
       elif focus >= 25:
-        dmg = self.basic(hunter, states, pet_states)
+        self._counter = self._cooldown
+        dmg = self.basic(hunter, states)
         if not emp:
           focus -= 25
+    if dmg and states['Cobra Strikes'].active():
+      states['Cobra Strikes'].use_stack()
+      dmg = dmg / self.critmod(hunter) * 2 # guaranteed crit
     focus += time * self.focus_gen(hunter)
     return dmg,focus
   
   def auto(self,hunter,states={}):
-    ap = self.ap(hunter)
-    if states['Focus Fire'].active():
-      ap *= 1.1
-    dmg = ap/3.5*2 # 100% weapon damage
+    dmg = self.base(hunter,states)
     dmg *= armormod()
+    dmg *= self.critmod(hunter)
+    dmg *= self.multistrike(hunter)
     dmg *= self.versatility(hunter)
     dmg *= self.combat_experience(hunter)
     if hunter.meta.spec == 0:
       dmg *= self.mastery(hunter)*1.2 # empowered pets
     return dmg
-
-
-import inspect, sys
-def pet_states_computable(pet,hunter):
-  return []
+  
+  def do_spells(self,hunter):
+    melee = {'name':'Pet (melee)',
+             'id':'pet-melee',
+             'attributes':[
+              {'id':'weapon',
+               'title':'Weapon co.',
+               'value':'100%',},
+              {'id':'base',
+               'title':'Base damage',
+               'value':'%.02f' % self.base(hunter),},
+              {'id':'armor',
+               'title':'Armor',
+               'value':'%.02f' % (armormod()*100),},
+              {'id':'crit',
+               'title':'Crit',
+               'value':'%.02f' % self.critmod(hunter),},
+              {'id':'mastery',
+               'title':'Mastery',
+               'value':'%.02f' % self.mastery(hunter),},
+              {'id':'multistrike',
+               'title':'Multistrike',
+               'value':'%.02f' % self.multistrike(hunter),},
+              {'id':'versatility',
+               'title':'Versatility',
+               'value':'%.02f' % self.versatility(hunter),},
+              {'id':'combat',
+               'title':'Combat Experience',
+               'value':'%.02f' % self.combat_experience(hunter),},
+              {'id':'emp',
+               'title':'Empowered Pets',
+               'value':hunter.meta.spec == BM and '120.00%' or '100.00%',},
+              {'id':'damage',
+               'title':'Damage',
+               'value':'%.02f' % self.auto(hunter),},
+             ]}
+    basic = {'name':'Pet (basic)',
+             'id':'pet-melee',
+             'attributes':[
+              {'id':'weapon',
+               'title':'Weapon co.',
+               'value':'100%',},
+              {'id':'base',
+               'title':'Base damage',
+               'value':'%.02f' % self.base(hunter),},
+              {'id':'armor',
+               'title':'Armor',
+               'value':'%.02f' % (armormod()*100),},
+              {'id':'crit',
+               'title':'Crit',
+               'value':'%.02f' % self.critmod(hunter),},
+              {'id':'mastery',
+               'title':'Mastery',
+               'value':'%.02f' % self.mastery(hunter),},
+              {'id':'combat',
+               'title':'Combat Experience',
+               'value':'%.02f' % self.combat_experience(hunter),},
+              {'id':'multistrike',
+               'title':'Multistrike',
+               'value':'%.02f' % self.multistrike(hunter),},
+              {'id':'versatility',
+               'title':'Versatility',
+               'value':'%.02f' % self.versatility(hunter),},
+              {'id':'emp',
+               'title':'Empowered Pets',
+               'value':hunter.meta.spec == BM and '120.00%' or '100.00%',},
+              {'id':'collar',
+               'title':'Spiked Collar',
+               'value':'110.00%',},
+              {'id':'blink',
+               'title':'Blink Strikes',
+               'value':hunter.meta.talent5 == 1 and '150.00%' or '100.00%',},
+              {'id':'damage',
+               'title':'Damage',
+               'value':'%.02f' % self.basic(hunter),},
+             ]}
+    return (melee,basic,)

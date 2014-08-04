@@ -49,9 +49,9 @@ class Spell(Calc):
     _attributeslist = (('weapon','Weapon co.'),
                        ('ap','AP co.'),
                        ('base','Base damage'),
-                       ('totalcritmod','Crit modifier'),
+                       ('totalcritmod','Crit'),
                        ('armor','Armor mit.'),
-                       ('mastery','Mastery buff'),
+                       ('mastery','Mastery'),
                        ('buff','Buff'),
                        ('perk','Draenor perk'),
                        ('spec','Spec. based mod.'),
@@ -633,4 +633,7 @@ def do_spells(meta, hunter):
     spelltable.append({'name':spell.name,
                        'id':spell.name.lower().replace(' ','-'),
                        'attributes':spell.attributes()})
+  from pet import Pet
+  pet = Pet()
+  spelltable.extend(pet.do_spells(hunter))
   return spelltable

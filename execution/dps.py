@@ -5,18 +5,17 @@ from priorities import *
 
 from calcs.spells import *
 from calcs.tools import *
-from calcs.pet import Pet, pet_states_computable
+from calcs.pet import Pet
 
-def runner(hunter,aoe=0,lastcalc=0):
+def runner(hunter,options,aoe=False,lastcalc=0):
   states = states_computable(hunter)
   cds = cds_computable(hunter)
   conditions = conditions_computable(hunter)
   pet = Pet()
-  pet_states = pet_states_computable(pet,hunter)
 
-  def update_states(time,action,pet_basic,boss_health,aoe):
+  def update_states(time,action,pet_basic,boss_health):
     for k,state in states.items():
-      state.update_state(time,action,states,pet_basic,boss_health,aoe)
+      state.update_state(time,action,states,pet_basic,boss_health)
       states[k] = state
     for k,cd in cds.items():
       cd.update_state(time,action,states)
@@ -40,7 +39,7 @@ def runner(hunter,aoe=0,lastcalc=0):
   pet_max_focus = max_focus
   pet_ending_focus = pet_max_focus
   iterations = 200
-  total_time = 360
+  total_time = 360*4
 
   _priority = aoe and [bm_aoe_priority,mm_aoe_priority,sv_aoe_priority] or [bm_priority,mm_priority,sv_priority]
   while time_sum < total_time:
@@ -64,14 +63,14 @@ def runner(hunter,aoe=0,lastcalc=0):
         f_gains = f_gains and sum(f_gains) or 0
         dmg = spell.damage(states) * modifiers
         if aoe:
-          dmg += dmg * spell.aoe() * (aoe-1)
+          dmg += dmg * spell.aoe() * (options['aoe1']-1)
           if spell_id == 'Chimera Shot':
             dmg *= 2
         auto_dmg = AutoShot(hunter).dps(states) * time * t_modifiers * modifiers
         auto_sum += auto_dmg
         poison_dmg = PoisonedAmmo(hunter).dps(states) * time * t_modifiers * modifiers
         poison_sum += poison_dmg
-        incend_dmg = IncendiaryAmmo(hunter).dps(states) * aoe * time * t_modifiers * modifiers
+        incend_dmg = IncendiaryAmmo(hunter).dps(states) * options['aoe1'] * time * t_modifiers * modifiers
         incend_sum += incend_dmg
         if spell_id in ('Arcane Shot','Multi-Shot',):
           serpent_sum += spells.SerpentSting(hunter).instant() * modifiers
@@ -82,7 +81,7 @@ def runner(hunter,aoe=0,lastcalc=0):
         pf_gains = [s.pet_focus_gains(states,time) for s in states.values()]
         pf_gains = [pfg for pfg in pf_gains if pfg]
         pf_gains = pf_gains and sum(pf_gains) or 0
-        pet_basic,pet_ending_focus = pet.do_basic(hunter, pet_starting_focus, time, states, pet_states)
+        pet_basic,pet_ending_focus = pet.do_basic(hunter, pet_starting_focus, time, states)
         pet_ending_focus += pf_gains
         pet_ending_focus += spell.pet_focus_gain() # Fervor/Focus Fire
         pet_basic_sum += pet_basic
@@ -92,7 +91,7 @@ def runner(hunter,aoe=0,lastcalc=0):
         pet_auto = pet.auto(hunter,states) * time * pt_modifiers * p_modifiers
         pet_auto_sum += pet_auto
         if states['Beast Cleave'].active():
-          beast_cleave_sum += (pet_auto + pet_basic) * (aoe - 1) # perk makes it 100%?
+          beast_cleave_sum += (pet_auto + pet_basic) * (options['aoe1'] - 1) # perk makes it 100%?
 
         if spell_id in shot_counts:
           shot_counts[spell_id]['counter'] += 1
@@ -132,7 +131,7 @@ def runner(hunter,aoe=0,lastcalc=0):
                       'states':[s.info(states,time) for s in states.values()],
                       'cds':[c.info() for c in cds.values()],
                       'conditions':[c.validate(cds,states,starting_focus,1-i/float(iterations)) for c in conditions],})
-        update_states(time,spell_id,pet_basic,boss_health,aoe)
+        update_states(time,spell_id,pet_basic,boss_health)
         time_sum += time
         dmg_sum += dmg
         break
@@ -166,7 +165,7 @@ def runner(hunter,aoe=0,lastcalc=0):
     uptime = states['Serpent Sting'].uptime()
     serpent_sum += spells.SerpentSting(hunter).dps()/15 * uptime # this method is really DPCT
     if aoe:
-      serpent_sum *= aoe
+      serpent_sum *= options['aoe1']
     dmg_sum += serpent_sum
     shot_counts['Serpent Sting'] = {'counter':'--',
                                     'total':serpent_sum}
