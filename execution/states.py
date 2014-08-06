@@ -154,10 +154,7 @@ class Invigoration(State):
     return self._timer >= self.time_to_proc()
    
   def focus_gains(self,states,time):
-    if self.active():
-      return 20
-    else:
-      return 0
+    return self.active() and 20 or 0
 
 class LockAndLoadProc(State):
   computable = True
@@ -514,8 +511,7 @@ class Fervor(State):
     self._duration -= time
  
   def focus_gains(self,states,time):
-    if self.active():
-      return min(self._max,5.0*time)
+    return self.active() and min(self._max,5.0*time) or 0
   
   def pet_focus_gains(self,states,time):
     if self.active():

@@ -296,6 +296,95 @@ class BeastCleaveCondition(Condition):
 
 
 
+ 
+def fpassive(states, hunter, time):
+  t_modifiers = product([s.time_modifier() for s in states.values()])
+  return time * hunter.focus_gen() * t_modifiers
+ 
+def spell_check(hunter,spell,spell_name,focus,arc_cost,cds,states):
+  """ 1. If less than cobra/focusing shot cast time, check if we have focus to do arc + spell
+      2. If less than cobra/focusing shot cast time + 1, check if we have focus to do arc + cobra + spell
+  """
+  cob = CobraShot(hunter)
+  foc = FocusingShot(hunter)
+  cobra_speed = cob.casttime() / product([s.time_modifier() for s in states.values()])
+  focusing_speed = foc.casttime() / product([s.time_modifier() for s in states.values()])
+ 
+  cost = spell.focus()
+ 
+  if hunter.meta.talent7 == 1:
+    cast_speed = focusing_speed
+    f_cast = abs(foc.focus())
+  else:
+    cast_speed = cobra_speed
+    f_cast = abs(cob.focus())
+   
+  arc_cost1 = arc_cost2 = cost
+  if states['Bestial Wrath'].duration() >= cast_speed:
+    cost /= 2
+    arc_cost1 /= 2
+  if states['Bestial Wrath'].duration() >= cast_speed + 1:
+    arc_cost2 /= 2
+   
+  check = False
+  if cds[spell_name].cdtime <= cast_speed:
+    check = focus + fpassive(states,hunter,1) > cost + arc_cost1
+  elif cds[spell_name].cdtime <= cast_speed + 1:
+    check = focus + fpassive(states,hunter,1+cast_speed) + f_cast > cost + arc_cost2
+  else:
+    check = True # don't bother with anything longer
+
+  return check
+
+class BMArcaneSpecialCondition(Condition):
+  title = "BM Arcane Shot - special focus check"
+  id = 'BMA'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    kc = KillCommand(self.hunter)
+    arc = ArcaneShot(self.hunter)
+    moc = MurderOfCrows(self.hunter)
+   
+    arc_cost = arc.focus()
+   
+    if states['Thrill of the Hunt'].active():
+      arc_cost -= 20
+   
+    # if fervor is up in one GCD, assume we exhaust current focus
+    fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+   
+    checks = [spell_check(self.hunter,kc,'Kill Command',focus,arc_cost,cds,states) or fervor,
+              spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
+    return False not in checks
+
+class SVArcaneSpecialCondition(Condition):
+  title = "SV Arcane Shot - special focus check"
+  id = 'SVA'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    ba = BlackArrow(self.hunter)
+    es = ExplosiveShot(self.hunter)
+    arc = ArcaneShot(self.hunter)
+    moc = MurderOfCrows(self.hunter)
+   
+    arc_cost = arc.focus()
+   
+    if states['Thrill of the Hunt'].active():
+      arc_cost -= 20
+   
+    # if fervor is up in one GCD, assume we exhaust current focus
+    fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+   
+    checks = [spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or fervor,
+              spell_check(self.hunter,es,'Explosive Shot',focus,arc_cost,cds,states) or fervor,
+              spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
+    return False not in checks
+  
+
+
+
 import inspect, sys
 def conditions_computable(hunter):
   _conditions = inspect.getmembers(sys.modules[__name__], lambda term: getattr(term,'computable',False))

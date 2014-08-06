@@ -39,7 +39,8 @@ def runner(hunter,options,aoe=False,lastcalc=0):
   pet_max_focus = max_focus
   pet_ending_focus = pet_max_focus
   iterations = 200
-  total_time = 360*4
+  total_time = 400
+  spell_id = ''
 
   _priority = aoe and [bm_aoe_priority,mm_aoe_priority,sv_aoe_priority] or [bm_priority,mm_priority,sv_priority]
   while time_sum < total_time:

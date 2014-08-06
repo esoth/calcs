@@ -353,7 +353,7 @@ class AutoShot(PhysicalSpell):
 class PoisonedAmmo(MagicSpell):
   computable = True
   name = "Poisoned Ammo (Exotic Ammunitions)"
-  _ap = .425
+  _ap = .48
   
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
