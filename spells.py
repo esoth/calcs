@@ -496,13 +496,8 @@ class MultiShot(PhysicalSpell):
   computable = True
   name = "Multi-Shot"
   _weapon = .3
+  _focus = 40
   _aoe = 1
-  
-  def perk(self):
-    return self.hunter.meta.spec == MM and 1.2 or 1
-  
-  def focus(self):
-    return self.hunter.meta.spec == MM and 35 or 40
 
   def damage(self,states={}):
     base = super(MultiShot,self).damage(states)
