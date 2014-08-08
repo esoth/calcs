@@ -107,6 +107,8 @@ def runner(hunter,options,aoe=False,lastcalc=0):
           focus_costs *= f_modifiers
           if states['Thrill of the Hunt'].active() and spell_id in ('Aimed Shot','Arcane Shot'):
             focus_costs -= 20
+          if states['Bombardment'].active() and spell_id == 'Multi-Shot':
+            focus_costs -= 25
         #if not gcd, calculate passive first and cap at max focus
         if time > 1:
           ending_focus = min(max_focus,min(max_focus,starting_focus + focus_total_gains) - focus_costs)

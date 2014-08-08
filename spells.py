@@ -18,7 +18,6 @@ class Spell(Calc):
   _pet_focus_gain = 0 # a one pet focus gain, probably from Focus Fire or Fervor
   _cd = 0
   _duration = 0
-  _perk = 0
   _aoe = 0 # other targets take this percent
   
   def weapon(self):
@@ -201,7 +200,7 @@ class Spell(Calc):
   
   def perk(self):
     """ Draenor perk """
-    return self._perk
+    return 0
 
   def versatility(self):
     """ Versatility """
@@ -382,10 +381,9 @@ class IncendiaryAmmo(MagicSpell):
 class ArcaneShot(MagicSpell):
   computable = True
   name = "Arcane Shot"
-  _weapon = .95
+  _weapon = 1.14
   _casttime = GCD
   _focus = 30
-  _perk = 1.2
   
   def lone(self):
     """ Lone Wolf talent """
@@ -395,11 +393,10 @@ class BlackArrow(MagicSpell):
   computable = True
   name = "Black Arrow"
   _weapon = 0
-  _ap = 1.416
+  _ap = 1.6992
   _casttime = GCD
   _focus = 35
   _cd = 30
-  _perk = 1.2
   _spec = 1.3
   _duration = 20
   
@@ -426,10 +423,9 @@ class ChimeraShot(MagicSpell):
 class AimedShot(PhysicalSpell):
   computable = True
   name = "Aimed Shot"
-  _weapon = 2.55
+  _weapon = 3.06
   _casttime = 2.5
   _focus = 50
-  _perk = 1.2
   
   def lone(self):
     """ Lone Wolf talent """
@@ -449,10 +445,9 @@ class AimedShot(PhysicalSpell):
 class CobraShot(MagicSpell):
   computable = True
   name = "Cobra Shot"
-  _weapon = 0.35
+  _weapon = 0.42
   _casttime = 2
   _focus = -14
-  _perk = 1.2
   
   def lone(self):
     """ Lone Wolf talent """
@@ -487,8 +482,7 @@ class KillCommand(PhysicalSpell):
   _focus = 40
   _casttime = GCD
   _cd = 6
-  _ap = 1.575
-  _perk = 1.2
+  _ap = 1.890
   
   def spec(self):
     """ Combat Experience (1.5 base, 1.85 if Versatility) """
@@ -517,9 +511,8 @@ class MultiShot(PhysicalSpell):
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
-  _ap = 1.256
+  _ap = 1.5072
   _duration = 15
-  _perk = 1.2
   
   def instant(self):
     if self.hunter.meta.spec != 2:
@@ -532,8 +525,7 @@ class SteadyShot(PhysicalSpell):
   name = "SteadyShot"
   _focus = -14
   _casttime = 2
-  _weapon = .35
-  _perk = 1.2
+  _weapon = .42
   
   def lone(self):
     """ Lone Wolf talent """
@@ -617,7 +609,7 @@ class MurderOfCrows(PhysicalSpell):
 class FocusingShot(PhysicalSpell):
   computable = True
   name = "Focusing Shot"
-  _weapon = 1.00
+  _weapon = 1.20
   _casttime = 3
   _focus = -50
 
