@@ -4,14 +4,16 @@ from calcs.tools import *
 class Condition:
   """ True or False conditions """
   # we probably want to make a choices based on a set of all conceivable conditions, instead
-  #   of looking at states and CDs directly. A Condition will check the relevant states and
-  #   CD(s) and return True or False if it's available
+  # of looking at states and CDs directly. A Condition will check the relevant states and
+  # CD(s) and return True or False if it's available
   # A priority rotation list will then order conditions in a certain way and select the first
-  #   spell that returns a condition of True
-
-  def __init__(self,hunter):
+  # spell that returns a condition of True
+ 
+  def __init__(self,hunter,options,aoe):
     self.hunter = hunter
-
+    self.options = options
+    self.aoe = aoe
+   
   def validate(self):
     return True
 
@@ -381,12 +383,101 @@ class SVArcaneSpecialCondition(Condition):
               spell_check(self.hunter,es,'Explosive Shot',focus,arc_cost,cds,states) or fervor,
               spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
     return False not in checks
+
+class BWHoldCondition(Condition):
+  """ The purpose here is to guarantee we get two KCs during BW """
+  title = "Hold Bestial Wrath for Kill Command"
+  id = 'BH'
+  computable = True
+ 
+  def validate(self, cds, states, focus, time):
+    spell = KillCommand(self.hunter)
+    if self.options['bm3']:
+      return cds['Kill Command'].cdtime <= 2
+    return True
+
+class NoDBBWCondition(Condition):
+  title = "No Dire Beast during BW"
+  id = 'NDB'
+  computable = True
+ 
+  def validate(self, cds, states, focus, time):
+    if self.options['bm4']:
+      return not states['Bestial Wrath'].active()
+    return True
+
+class NoFFBWCondition(Condition):
+  title = "No Focus Fire during BW"
+  id = 'NFF'
+  computable = True
+ 
+  def validate(self, cds, states, focus, time):
+    if self.options['bm5']:
+      return not states['Bestial Wrath'].active()
+    return True
+
+class FocusFireSpecialCondition(Condition):
+  title = "Use Focus Fire just before BW"
+  id = 'FFB'
+  computable = True
+ 
+  def validate(self, cds, states, focus, time):
+    return self.options['bm6'] and not states['Focus Fire'].active() and states['Frenzy'].stacks() and cds['Bestial Wrath'].cdtime <= 2
+
+
+class AimedShotOnlyCACondition(Condition):
+  title = "Don't use anything but Aimed Shot during Careful Aim"
+  id = 'CAA'
+  computable = True
+ 
+  def validate(self, cds, states, focus, time):
+    if self.options['mm1']==0:
+      return not states['Careful Aim'].active() and not states['Rapid Fire'].active()
+    return True
+
+class NoChimeraCACondition(Condition):
+  title = "Don't use anything but Aimed Shot during Careful Aim"
+  id = 'CAA'
+  computable = True
+ 
+  def validate(self, cds, states, focus, time):
+    if self.options['mm1']==1:
+      return not states['Careful Aim'].active() and not states['Rapid Fire'].active()
+    return True
+
+class InstantShotsCondition(Condition):
+  title = "Only cast instant shots if after Focusing Shot"
+  id = 'AFS'
+  computable = True
+   
+  def validate(self, cds, states, focus, time):
+    if self.options['mm2'] and not states['Focusing Shot'].active():
+      return False
+    return True
+
+class AoEMainNukesCondition(Condition):
+  title = "Only cast instant shots if after Focusing Shot"
+  id = 'AFS'
+  computable = True
+   
+  def validate(self, cds, states, focus, time):
+    return self.options['aoe2']
+
+class AoEMainNukesFocusCondition(Condition):
+  title = "Only cast instant shots if after Focusing Shot"
+  id = 'AFS'
+  computable = True
+   
+  def validate(self, cds, states, focus, time):
+    if self.options['aoe2'] and self.options['aoe3']:
+      return focus > self.options['aoe3']
+    return True
   
 
 
 
 import inspect, sys
-def conditions_computable(hunter):
+def conditions_computable(hunter,options,aoe):
   _conditions = inspect.getmembers(sys.modules[__name__], lambda term: getattr(term,'computable',False))
-  conditions = [k(hunter) for name,k in _conditions if issubclass(k,Condition)]
+  conditions = [k(hunter,options,aoe) for name,k in _conditions if issubclass(k,Condition)]
   return conditions

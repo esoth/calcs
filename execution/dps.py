@@ -10,12 +10,12 @@ from calcs.pet import Pet
 def runner(hunter,options,aoe=False,lastcalc=0):
   states = states_computable(hunter)
   cds = cds_computable(hunter)
-  conditions = conditions_computable(hunter)
+  conditions = conditions_computable(hunter,options,aoe)
   pet = Pet()
 
-  def update_states(time,action,pet_basic,boss_health):
+  def update_states(time,action,pet_basic,boss_health,focus_costs):
     for k,state in states.items():
-      state.update_state(time,action,states,pet_basic,boss_health)
+      state.update_state(time,action,states,pet_basic,boss_health,focus_costs)
       states[k] = state
     for k,cd in cds.items():
       cd.update_state(time,action,states)
@@ -48,7 +48,7 @@ def runner(hunter,options,aoe=False,lastcalc=0):
     pet_starting_focus = pet_ending_focus
     boss_health = 1-time_sum/float(total_time)
     for priority in _priority[hunter.meta.spec]:
-      if False not in [c(hunter).validate(cds,states,starting_focus,boss_health) for c in priority['conditions']]:
+      if False not in [c(hunter,options,aoe).validate(cds,states,starting_focus,boss_health) for c in priority['conditions']]:
         spell_id = priority['id']
         spell_class = spell_id.lower().replace(' ','_')+'_rotation'
         spell = priority['spell'](hunter)
@@ -105,10 +105,12 @@ def runner(hunter,options,aoe=False,lastcalc=0):
         focus_costs = spell.focus()
         if focus_costs > 0: # don't make cobra cost during BW!
           focus_costs *= f_modifiers
-          if states['Thrill of the Hunt'].active() and spell_id in ('Aimed Shot','Arcane Shot'):
+          if states['Thrill of the Hunt'].active() and spell_id in ('Aimed Shot','Arcane Shot','Multi-Shot'):
             focus_costs -= 20
+            focus_costs = max(0,focus_costs)
           if states['Bombardment'].active() and spell_id == 'Multi-Shot':
             focus_costs -= 25
+            focus_costs = max(0,focus_costs)
         #if not gcd, calculate passive first and cap at max focus
         if time > 1:
           ending_focus = min(max_focus,min(max_focus,starting_focus + focus_total_gains) - focus_costs)
@@ -134,7 +136,7 @@ def runner(hunter,options,aoe=False,lastcalc=0):
                       'states':[s.info(states,time) for s in states.values()],
                       'cds':[c.info() for c in cds.values()],
                       'conditions':[c.validate(cds,states,starting_focus,1-i/float(iterations)) for c in conditions],})
-        update_states(time,spell_id,pet_basic,boss_health)
+        update_states(time,spell_id,pet_basic,boss_health,focus_costs)
         time_sum += time
         dmg_sum += dmg
         break
@@ -176,7 +178,6 @@ def runner(hunter,options,aoe=False,lastcalc=0):
     dmg_sum += beast_cleave_sum
     shot_counts['Beast Cleave'] = {'counter':'--',
                                    'total':beast_cleave_sum}
-    dmg_sum += beast_cleave_sum
   if hunter.meta.talent5 == TIER5.index(STAMPEDE):
     auto = pet_auto_sum
     dmg = auto + pet_basic_sum

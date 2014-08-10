@@ -130,7 +130,7 @@ class Spell(Calc):
     return 1
     
   def damage(self, states={}):
-    ap = states and states['Focus Fire'].active() and 1.1 or 1
+    ap = states and states['Focus Fire'].active() and states['Focus Fire'].ap_modifier() or 1
     dmg = self.base(ap) * self.totalcritmod()
     if self.armor():
       dmg = dmg * self.armor()
