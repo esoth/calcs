@@ -96,6 +96,7 @@ class AgilityStat(Stat):
   _base = 1288
   _spec = 1.05
   _buff = 5
+  _flask = 220
   
   def rating(self):
     return '--'
@@ -163,9 +164,6 @@ class CritStat(Stat):
       _food *= 2
     return _food
   
-  def flask(self):
-    return self.hunter.spec == 1 and 500 or 0
-  
   def total_display(self):
     """ In game tooltip will appear 3% higher, plus 1% for some racials """
     return super(CritStat,self).total_display()
@@ -204,9 +202,6 @@ class MasteryStat(Stat):
     if self.hunter.race in PANDARENS:
       _food *= 2
     return _food
-  
-  def flask(self):
-    return self.hunter.spec == 0 and 500 or 0
   
   def rating(self):
     if self.hunter.spec == 0:
@@ -272,9 +267,6 @@ class MultistrikeStat(Stat):
     if self.hunter.race in PANDARENS:
       _food *= 2
     return _food
-  
-  def flask(self):
-    return self.hunter.spec == SV and 500 or 0
 
   def attunement(self):
     """ 5% more multistrike from rating sources for SV """

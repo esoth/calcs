@@ -393,7 +393,7 @@ class BlackArrow(MagicSpell):
   computable = True
   name = "Black Arrow"
   _weapon = 0
-  _ap = 1.6992
+  _ap = 5.1
   _casttime = GCD
   _focus = 35
   _cd = 30
@@ -411,7 +411,7 @@ class BlackArrow(MagicSpell):
 class ChimeraShot(MagicSpell):
   computable = True
   name = "Chimera Shot"
-  _weapon = 1.9
+  _weapon = 3.85
   _casttime = GCD
   _focus = 35
   _cd = 9
@@ -423,7 +423,7 @@ class ChimeraShot(MagicSpell):
 class AimedShot(PhysicalSpell):
   computable = True
   name = "Aimed Shot"
-  _weapon = 3.06
+  _weapon = 3.85
   _casttime = 2.5
   _focus = 50
   
@@ -445,7 +445,7 @@ class AimedShot(PhysicalSpell):
 class CobraShot(MagicSpell):
   computable = True
   name = "Cobra Shot"
-  _weapon = 0.42
+  _weapon = 0.6
   _casttime = 2
   _focus = -14
   
@@ -456,7 +456,7 @@ class CobraShot(MagicSpell):
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  _ap = .4 * 4
+  _ap = .46 * 4
   _casttime = GCD
   _focus = 15
   _cd = 6
@@ -482,7 +482,7 @@ class KillCommand(PhysicalSpell):
   _focus = 40
   _casttime = GCD
   _cd = 6
-  _ap = 1.890
+  _ap = 1.60
   
   def spec(self):
     """ Combat Experience (1.5 base, 1.85 if Versatility) """
@@ -506,7 +506,7 @@ class MultiShot(PhysicalSpell):
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
-  _ap = 1.5072
+  _ap = 2.25
   _duration = 15
   
   def instant(self):
@@ -520,7 +520,7 @@ class SteadyShot(PhysicalSpell):
   name = "SteadyShot"
   _focus = -14
   _casttime = 2
-  _weapon = .42
+  _weapon = .6
   
   def lone(self):
     """ Lone Wolf talent """
@@ -607,6 +607,17 @@ class FocusingShot(PhysicalSpell):
   _weapon = 1.20
   _casttime = 3
   _focus = -50
+ 
+  def damage(self, states={}):
+    base = super(FocusingShot,self).damage(states)
+    if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
+      # we can assume this is a MM hunter
+      base = base/self.totalcritmod()
+      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
+      crit_mod = 2 + self.critmod()
+      crit = (crit_mod * crit_chance + (1-crit_chance))
+      return base * crit
+    return base
 
 
 

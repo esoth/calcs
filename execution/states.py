@@ -397,7 +397,7 @@ class ThrillOfTheHuntState(State):
         self._stacks -= 1
       if actionid in ('Arcane Shot','Aimed Shot','Kill Command','A Murder of Crows','Explosive Shot','Black Arrow',
                       'Chimera Shot','Glaive Toss','Barrage','Powershot','Multi-Shot') and focus_costs:
-        self._counter += .3
+        self._counter += .2
       if self._counter > 1: # reset and add stacks
         self._counter -= 1
         self._stacks = 3
