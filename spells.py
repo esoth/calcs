@@ -381,7 +381,7 @@ class IncendiaryAmmo(MagicSpell):
 class ArcaneShot(MagicSpell):
   computable = True
   name = "Arcane Shot"
-  _weapon = 1.14
+  _weapon = 1.0
   _casttime = GCD
   _focus = 30
   
@@ -423,7 +423,7 @@ class ChimeraShot(MagicSpell):
 class AimedShot(PhysicalSpell):
   computable = True
   name = "Aimed Shot"
-  _weapon = 3.85
+  _weapon = 3.5
   _casttime = 2.5
   _focus = 50
   
@@ -456,7 +456,7 @@ class CobraShot(MagicSpell):
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  _ap = .46 * 4
+  _ap = .42 * 4
   _casttime = GCD
   _focus = 15
   _cd = 6
@@ -506,7 +506,7 @@ class MultiShot(PhysicalSpell):
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
-  _ap = 2.25
+  _ap = 1.75
   _duration = 15
   
   def instant(self):

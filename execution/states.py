@@ -102,9 +102,9 @@ class CobraStrikes(State):
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self._timer > 1: # reset
       self._timer -= 1
-      self._stacks += 2
+      self._stacks += 1
     if actionid == 'Arcane Shot':
-      self._timer += .15
+      self._timer += .20
   
   def use_stack(self):
     self._stacks -= 1
@@ -350,7 +350,7 @@ class EnhancedBasicAttacksState(State):
     if self.active(): # reset
       self._counter = 0.0
     if pet_basic:
-      self._counter += .2
+      self._counter += .15
  
   def active(self):
     return self._counter >= 1
