@@ -159,7 +159,7 @@ class CritStat(Stat):
   
   def food(self):
     """ Pandarens receive double value """
-    _food = self.hunter.spec == 1 and 150 or 0
+    _food = self.hunter.spec == 1 and 50 or 0
     if self.hunter.race in PANDARENS:
       _food *= 2
     return _food
@@ -198,7 +198,7 @@ class MasteryStat(Stat):
   
   def food(self):
     """ Pandarens receive double value """
-    _food = self.hunter.spec == 0 and 150 or 0
+    _food = self.hunter.spec == 0 and 50 or 0
     if self.hunter.race in PANDARENS:
       _food *= 2
     return _food
@@ -263,7 +263,7 @@ class MultistrikeStat(Stat):
   
   def food(self):
     """ Pandarens receive double value """
-    _food = self.hunter.spec == SV and 150 or 0
+    _food = self.hunter.spec == SV and 50 or 0
     if self.hunter.race in PANDARENS:
       _food *= 2
     return _food

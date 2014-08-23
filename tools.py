@@ -82,11 +82,16 @@ def product(value):
 import json
 from urllib import urlopen
 REGIONS = (('eu','EU'),('us','US'))
-SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=n3kp7varcf4wrtkmu3qcgqzszgtyznmb'))['realms']]
-#SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('http://us.battle.net/api/wow/realm/status'))['realms']]
-for r in json.load(urlopen('http://eu.battle.net/api/wow/realm/status'))['realms']:
-  if (r['slug'],r['name']) not in SERVERS:
-    SERVERS.append((r['slug'],r['name']))
+try:
+  SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=n3kp7varcf4wrtkmu3qcgqzszgtyznmb'))['realms']]
+except:
+  SERVERS = [] # kinda crashes the whole site otherwise!
+try:
+  for r in json.load(urlopen('https://eu.api.battle.net/api/wow/realm/status?apikey=n3kp7varcf4wrtkmu3qcgqzszgtyznmb'))['realms']:
+    if (r['slug'],r['name']) not in SERVERS:
+      SERVERS.append((r['slug'],r['name']))
+except:
+  pass
     
 def tooltip(compid,value):
   if compid in ('buff','armor',):

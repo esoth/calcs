@@ -92,7 +92,7 @@ def runner(hunter,options,aoe=False,lastcalc=0):
         pet_auto = pet.auto(hunter,states) * time * pt_modifiers * p_modifiers
         pet_auto_sum += pet_auto
         if states['Beast Cleave'].active():
-          beast_cleave_sum += (pet_auto + pet_basic) * (options['aoe1'] - 1) # perk makes it 100%?
+          beast_cleave_sum += (pet_auto + pet_basic) * max(0,(options['aoe1'] - 1)) # perk makes it 100%?
 
         if spell_id in shot_counts:
           shot_counts[spell_id]['counter'] += 1
