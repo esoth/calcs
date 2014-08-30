@@ -358,7 +358,7 @@ class BMArcaneSpecialCondition(Condition):
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
    
     # if fervor is up in one GCD, assume we exhaust current focus
-    fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+    fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
    
     checks = [not steady_focus,
               spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or fervor,
@@ -387,7 +387,7 @@ class SVArcaneSpecialCondition(Condition):
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
    
     # if fervor is up in one GCD, assume we exhaust current focus
-    fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+    fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
    
     checks = [not steady_focus,
               spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or fervor,
@@ -417,7 +417,7 @@ class MMAimedSpecialCondition(Condition):
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
    
     # if fervor is up in one GCD, assume we exhaust current focus
-    fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+    fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
    
     checks = [not steady_focus,
               spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or fervor,
