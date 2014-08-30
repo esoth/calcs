@@ -103,7 +103,7 @@ class Spell(Calc):
     # v + .6*vm
     # v(1+.6m)
     mchance = self.hunter.multistrike.total()/100.0
-    return 1+.6*mchance
+    return 1+(self.hunter.meta.spec == SV and .8 or .6)*mchance
 
   def casttime(self):
     if self._casttime == 0:
@@ -571,10 +571,10 @@ class GlaiveToss(PhysicalSpell):
 class Barrage(PhysicalSpell):
   computable = True
   name = "Barrage"
-  _cd = 40
-  _focus = 30
+  _cd = 20
+  _focus = 60
   _casttime = 3
-  _weapon = 4.8
+  _weapon = 9.6
   _aoe = .25
   
   def casttime(self):
@@ -593,9 +593,9 @@ class Powershot(PhysicalSpell):
 class MurderOfCrows(PhysicalSpell):
   computable = True
   name = "A Murder of Crows"
-  _ap = .65 * 30 # http://www.esoth.com/blog/warlords-of-draenor-hunter-theorycrafting
-  _cd = 120
-  _focus = 60
+  _ap = .65 * 15 # http://www.esoth.com/blog/warlords-of-draenor-hunter-theorycrafting
+  _cd = 60
+  _focus = 30
     
   def mastery(self):
     """ +dmg modifier if BM or MM"""
