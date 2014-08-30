@@ -344,6 +344,7 @@ class BMArcaneSpecialCondition(Condition):
   computable = True
 
   def validate(self, cds, states, focus, time):
+    br = Barrage(self.hunter)
     kc = KillCommand(self.hunter)
     arc = ArcaneShot(self.hunter)
     moc = MurderOfCrows(self.hunter)
@@ -352,11 +353,16 @@ class BMArcaneSpecialCondition(Condition):
    
     if states['Thrill of the Hunt'].active():
       arc_cost -= 20
+    
+    steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
+    steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
    
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
    
-    checks = [spell_check(self.hunter,kc,'Kill Command',focus,arc_cost,cds,states) or fervor,
+    checks = [not steady_focus,
+              spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or fervor,
+              spell_check(self.hunter,kc,'Kill Command',focus,arc_cost,cds,states) or fervor,
               spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
     return False not in checks
 
@@ -370,18 +376,52 @@ class SVArcaneSpecialCondition(Condition):
     es = ExplosiveShot(self.hunter)
     arc = ArcaneShot(self.hunter)
     moc = MurderOfCrows(self.hunter)
+    br = Barrage(self.hunter)
    
     arc_cost = arc.focus()
    
     if states['Thrill of the Hunt'].active():
       arc_cost -= 20
+    
+    steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
+    steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
    
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
    
-    checks = [spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or fervor,
+    checks = [not steady_focus,
+              spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or fervor,
+              spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or fervor,
               spell_check(self.hunter,es,'Explosive Shot',focus,arc_cost,cds,states) or fervor,
               spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
+    return False not in checks
+
+class MMAimedSpecialCondition(Condition):
+  title = "MM Aimed Shot - special focus check"
+  id = 'MMA'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    ba = BlackArrow(self.hunter)
+    es = ExplosiveShot(self.hunter)
+    aim = AimedShot(self.hunter)
+    moc = MurderOfCrows(self.hunter)
+    br = Barrage(self.hunter)
+   
+    aim_cost = aim.focus()
+   
+    if states['Thrill of the Hunt'].active():
+      aim_cost -= 20
+    
+    steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
+    steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
+   
+    # if fervor is up in one GCD, assume we exhaust current focus
+    fervor = cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+   
+    checks = [not steady_focus,
+              spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or fervor,
+              spell_check(self.hunter,moc,'A Murder of Crows',focus,aim_cost,cds,states) or fervor]
     return False not in checks
 
 class BWHoldCondition(Condition):
