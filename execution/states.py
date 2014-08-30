@@ -93,6 +93,28 @@ class BestialWrathState(State):
   def active(self):
     return self.duration() > 0
 
+class SteadyFocus(State):
+  computable = True
+  state_id = 'Steady Focus'
+  _stacks = 0
+  _timer = 0
+  
+  def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
+    if self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS):
+      if actionid == 'Focusing Shot':
+        self._stacks = 2
+        self._timer = 10
+      elif actionid in ('Steady Shot','Cobra Shot'):
+        self._stacks = min(2,self._stacks + 1)
+        if self._stacks > 1:
+          self._timer = 10
+      else:
+        self._stacks = 0
+        self._timer -= time
+      
+  def active(self):
+    return self._timer > 0   
+
 class CobraStrikes(State):
   computable = True
   state_id = 'Cobra Strikes'
@@ -395,9 +417,8 @@ class ThrillOfTheHuntState(State):
     if self.hunter.meta.talent4 == TIER4.index(THRILLOFTHEHUNT):
       if self.active() and actionid in ('Arcane Shot','Aimed Shot','Multi-Shot'):
         self._stacks -= 1
-      if actionid in ('Arcane Shot','Aimed Shot','Kill Command','A Murder of Crows','Explosive Shot','Black Arrow',
-                      'Chimera Shot','Glaive Toss','Barrage','Powershot','Multi-Shot') and focus_costs:
-        self._counter += .2
+      if focus_costs:
+        self._counter += focus_costs/10*.06
       if self._counter > 1: # reset and add stacks
         self._counter -= 1
         self._stacks = 3
@@ -490,18 +511,17 @@ class TouchOfTheGraveProc(State):
   def total(self):
     return self._total
 
-class ImprovedAimedShotState(State):
+class EnhancedAimedShotState(State):
   computable = True
-  state_id = 'Improved Aimed Shot'
+  state_id = 'Enhanced Aimed Shot'
   _counter = 0.0
 
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self._counter > 1:
       self._counter -= 1
-    if actionid == 'AimedShot' and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
+    if actionid == 'Aimed Shot' and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
       # we can assume this is a MM hunter
-      base = base/self.totalcritmod()
-      crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
+      crit_chance = min(.6 + self.hunter.crit.total()/100.0,1)
       self._counter += crit_chance
   
   def active(self):
