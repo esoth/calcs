@@ -257,10 +257,6 @@ class MultistrikeStat(Stat):
   _rating = 66
   _buff = 5
   
-  def base(self):
-    """ SV starts at 10 """
-    return self.hunter.spec == SV and 10 or 0
-  
   def food(self):
     """ Pandarens receive double value """
     _food = self.hunter.spec == SV and 50 or 0
