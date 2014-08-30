@@ -32,6 +32,7 @@ def runner(hunter,options,aoe=False,lastcalc=0):
   beast_cleave_sum = 0
   serpent_sum = 0
   pb_counter = 0
+  sf_total = 0 # debugging only, Steady Focus total
   i = 0 # step counter
   shot_counts = {}
   max_focus = hunter.max_focus()
@@ -101,6 +102,9 @@ def runner(hunter,options,aoe=False,lastcalc=0):
           shot_counts[spell_id] = {'counter': 1,'total': dmg}
 
         focus_passive = time * hunter.focus_gen() * t_modifiers
+        if states['Steady Focus'].active():
+          sf_total += time
+          focus_passive *= 1.5
         focus_total_gains = focus_passive + f_gains
         focus_costs = spell.focus()
         if focus_costs > 0: # don't make cobra cost during BW!
@@ -199,4 +203,5 @@ def runner(hunter,options,aoe=False,lastcalc=0):
             'dps':'%.02f' % (dmg_sum/time_sum),
             'diff':'%.02f' % abs(diff),
             'diff_success':diff_success}
+  print 'Steady Focus uptime: %f' % (sf_total/time_sum)
   return (table,meta,totals)
