@@ -58,7 +58,7 @@ class ExplosiveShotCD(Cooldown):
  
   def update_state(self,time,actionid,states):
     from calcs.spells import ExplosiveShot
-    if actionid == self.actionid and not states['Lock and Load'].active():
+    if actionid == self.actionid and not states['Lock and Load']._stacks >= 0:
       self.cdtime = ExplosiveShot(self.hunter).cd()
     self.cdtime -= time
      

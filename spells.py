@@ -520,7 +520,7 @@ class SteadyShot(PhysicalSpell):
   name = "SteadyShot"
   _focus = -14
   _casttime = 2
-  _weapon = .6
+  _weapon = .75
   
   def lone(self):
     """ Lone Wolf talent """

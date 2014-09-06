@@ -45,9 +45,11 @@ def runner(hunter,options,aoe=False,lastcalc=0):
 
   _priority = aoe and [bm_aoe_priority,mm_aoe_priority,sv_aoe_priority] or [bm_priority,mm_priority,sv_priority]
   while time_sum < total_time:
+    if states['Lock and Load (proc)'].active():
+      cds['Explosive Shot'].cdtime = 0
     starting_focus = ending_focus
     pet_starting_focus = pet_ending_focus
-    boss_health = 1-time_sum/float(total_time)
+    boss_health = 1-time_sum/float(total_time)          
     for priority in _priority[hunter.meta.spec]:
       if False not in [c(hunter,options,aoe).validate(cds,states,starting_focus,boss_health) for c in priority['conditions']]:
         spell_id = priority['id']
@@ -107,6 +109,8 @@ def runner(hunter,options,aoe=False,lastcalc=0):
           focus_passive *= 1.5
         focus_total_gains = focus_passive + f_gains
         focus_costs = spell.focus()
+        if spell_id == 'Explosive Shot' and states['Lock and Load'].active():
+          focus_costs = 0
         if focus_costs > 0: # don't make cobra cost during BW!
           focus_costs *= f_modifiers
           if states['Thrill of the Hunt'].active() and spell_id in ('Aimed Shot','Arcane Shot','Multi-Shot'):

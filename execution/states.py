@@ -184,8 +184,7 @@ class LockAndLoadProc(State):
   _timer = 0
   
   def time_to_proc(self):
-    ms = 2.0 * self.hunter.multistrike.total() / 100.0 / 3.0 # 2 chances every 3 seconds
-    return 1/ms
+    return 1/.2*2 # 10
  
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self._timer >= self.time_to_proc(): # reset
@@ -200,21 +199,18 @@ class LockAndLoadState(State):
   computable = True
   state_id = 'Lock and Load'
   _active = False
-  _duration = 0
   _stacks = 0
  
   # going to need a class of procs to pass here
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     lnl = states['Lock and Load (proc)']
     if lnl.active():
-      self._stacks += 1
-      self._duration = 15
-     
-    if actionid == 'Explosive Shot' and self.stacks() and self.duration():
+      self._stacks = 2     
+    elif actionid == 'Explosive Shot':
       self._stacks -= 1
  
   def active(self):
-    return self.stacks() and self.duration()
+    return self.stacks()
 
 class RapidFire(State):
   computable = True

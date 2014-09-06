@@ -359,11 +359,13 @@ class BMArcaneSpecialCondition(Condition):
    
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+    br_check = self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or True
+    amoc_check = self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or True
    
     checks = [not steady_focus,
-              spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or fervor,
+              br_check or fervor,
               spell_check(self.hunter,kc,'Kill Command',focus,arc_cost,cds,states) or fervor,
-              spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
+              amoc_check or fervor]
     return False not in checks
 
 class SVArcaneSpecialCondition(Condition):
@@ -388,12 +390,14 @@ class SVArcaneSpecialCondition(Condition):
    
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+    br_check = self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or True
+    amoc_check = self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or True
    
     checks = [not steady_focus,
-              spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or fervor,
+              br_check or fervor,
               spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or fervor,
               spell_check(self.hunter,es,'Explosive Shot',focus,arc_cost,cds,states) or fervor,
-              spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or fervor]
+              amoc_check or fervor]
     return False not in checks
 
 class MMAimedSpecialCondition(Condition):
@@ -418,10 +422,14 @@ class MMAimedSpecialCondition(Condition):
    
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
+    br_check = self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or True
+    amoc_check = self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,aim_cost,cds,states) or True
    
     checks = [not steady_focus,
-              spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or fervor,
-              spell_check(self.hunter,moc,'A Murder of Crows',focus,aim_cost,cds,states) or fervor]
+              br_check or fervor,
+              amoc_check or fervor,
+              self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or fervor,
+              self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,aim_cost,cds,states) or fervor]
     return False not in checks
 
 class BWHoldCondition(Condition):
