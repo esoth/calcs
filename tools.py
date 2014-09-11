@@ -72,6 +72,7 @@ FOCUSINGSHOT = 'Focusing Shot'
 VERSATILITY = 'Versatility'
 TIER7 = [EXOTICMUNITIONS,FOCUSINGSHOT,VERSATILITY]
 TALENTS = [TIER1,TIER2,TIER3,TIER4,TIER5,TIER6,TIER7]
+API_KEY = 'n3kp7varcf4wrtkmu3qcgqzszgtyznmb'
 
 def product(value):
   if value:
@@ -84,11 +85,11 @@ import json
 from urllib import urlopen
 REGIONS = (('eu','EU'),('us','US'))
 try:
-  SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=n3kp7varcf4wrtkmu3qcgqzszgtyznmb'))['realms']]
+  SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']]
 except:
   SERVERS = [] # kinda crashes the whole site otherwise!
 try:
-  for r in json.load(urlopen('https://eu.api.battle.net/api/wow/realm/status?apikey=n3kp7varcf4wrtkmu3qcgqzszgtyznmb'))['realms']:
+  for r in json.load(urlopen('https://eu.api.battle.net/api/wow/realm/status?apikey=%s' % API_KEY))['realms']:
     if (r['slug'],r['name']) not in SERVERS:
       SERVERS.append((r['slug'],r['name']))
 except:

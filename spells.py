@@ -52,7 +52,6 @@ class Spell(Calc):
                        ('armor','Armor mit.'),
                        ('mastery','Mastery'),
                        ('buff','Buff'),
-                       ('perk','Draenor perk'),
                        ('spec','Spec. based mod.'),
                        ('versatility','Versatility'),
                        ('multistrike','Multistrike'),
