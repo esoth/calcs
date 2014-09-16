@@ -1,3 +1,5 @@
+API_KEY = 'n3kp7varcf4wrtkmu3qcgqzszgtyznmb'
+
 def armormod():
   """ 1-1938/(1938+5234); 1938 is boss armor, 134*103-11864; K=3610 """
   base = 1938.0
@@ -72,7 +74,6 @@ FOCUSINGSHOT = 'Focusing Shot'
 VERSATILITY = 'Versatility'
 TIER7 = [EXOTICMUNITIONS,FOCUSINGSHOT,VERSATILITY]
 TALENTS = [TIER1,TIER2,TIER3,TIER4,TIER5,TIER6,TIER7]
-API_KEY = 'n3kp7varcf4wrtkmu3qcgqzszgtyznmb'
 
 def product(value):
   if value:
@@ -84,16 +85,25 @@ def product(value):
 import json
 from urllib import urlopen
 REGIONS = (('eu','EU'),('us','US'))
+
+# SERVERS - Get all US servers than all EU servers """
+_servers = []
 try:
-  SERVERS = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']]
+  _servers = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']]
 except:
-  SERVERS = [] # kinda crashes the whole site otherwise!
+  pass # kinda crashes the whole site otherwise!
 try:
-  for r in json.load(urlopen('https://eu.api.battle.net/api/wow/realm/status?apikey=%s' % API_KEY))['realms']:
-    if (r['slug'],r['name']) not in SERVERS:
-      SERVERS.append((r['slug'],r['name']))
+  eu_realms = json.load(urlopen('https://eu.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']
+  for r in eu_realms:
+    if (r['slug'],r['name']) not in _servers:
+      _servers.append((r['slug'],r['name']))
 except:
   pass
+SERVERS = _servers
+
+SERVER_NAMES = {}
+for slug,name in SERVERS:
+  SERVER_NAMES[slug] = name
     
 def tooltip(compid,value):
   if compid in ('buff','armor',):
