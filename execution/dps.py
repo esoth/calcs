@@ -207,5 +207,4 @@ def runner(hunter,options,aoe=False,lastcalc=0):
             'dps':'%.02f' % (dmg_sum/time_sum),
             'diff':'%.02f' % abs(diff),
             'diff_success':diff_success}
-  print 'Steady Focus uptime: %f' % (sf_total/time_sum)
   return (table,meta,totals)
