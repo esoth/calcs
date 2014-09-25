@@ -82,6 +82,8 @@ def product(value):
   else:
     return 1
 
+SLOTS = ('weapon','head','neck','shoulders','back','chest','wrists','hands','waist','legs','feet','ring1','ring2','trinket1','trinket2',)
+
 import json
 from urllib import urlopen
 REGIONS = (('eu','EU'),('us','US'))

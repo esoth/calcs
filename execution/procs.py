@@ -1,47 +1,120 @@
-from calcs.spells import *
-from states import State
+import inspect, sys
+bonus = {'heroic':1.15,
+         'mythic':1.15*1.15}
 
 class Proc(object):
-  proc_id = 'Spell'
-  _stacks = 1
-  _duration = 1
-  _counter_to_proc = 1
-  _start_counter = 5
-  _damage_modifier = 1
-  _focus_modifier = 1
-  _time_modifier = 1
-  _duration = 1
-  _stacks = 1
+  _gear = [999999]
+  _magnitude = 0
+  _duration = 0
+  _cooldown = 0
   
-  def __init__(self,hunter):
-    self.hunter = hunter
+  def gear(self):
+    return isinstance(self._gear,int) and [self._gear] or self._gear
   
-  def counter_to_proc(self):
-    return self._counter_to_proc
-  def duration(self):
-    return self._duration
-  def stacks(self):
-    return self._stacks
-  def activate(self):
+  def magnitude(self,gear):
+    for g in gear:
+      if g['id'] in self.gear():
+        return g['bonus'] in bonus and bonus[ g['bonus'] ] * self._magnitude or self._magnitude
+    return self._magnitude
+  
+  def equipped(self,gear):
+    for g in gear:
+      if g['id'] in self.gear():
+        return True
     return False
+  
+  def uptime(self):
+    return self.stat != 'dps' and self._duration / self._cooldown
+  
+  def total(self,gear,haste):
+    if self.equipped(gear):
+      return self.magnitude(gear) * self._duration / self._cooldown
+    return 0
+    
+  def info(self,gear,haste):
+    data = {'name': self.__doc__.strip(),
+            'magnitude': self.magnitude(gear),
+            'uptime': '%.02f' % (self.uptime()*100),
+            'duration': self._duration,
+            'equipped': self.equipped(gear),
+            'effect': self.total(gear,haste),
+            'effect_display': '%d %s' % (self.total(gear,haste),self.stat)}
+    if hasattr(self,'_cooldown'):
+      data['cooldown'] = self._cooldown
+    if hasattr(self,'_rppm'):
+      data['rppm'] = self._rppm
+    return data
+    
+class OnUseProc(Proc):
+  """ On Use Trinket """
+
+class RPPMProc(Proc):
+  """ RPPM Trinket """  
+  
+  def uptime(self):
+    return self.stat != 'dps' and self._duration / (self._rppm*60)
  
-  def info(self):
-    return {'state_id':self.state_id,
-            'damage_modifier':self.damage_modifier(),
-            'duration':self.duration(),
-            'active':self.active(),
-            'stacks':self.stacks()}
- 
-  def update_state(self,time,actionid,states):
-    pass
+  def total(self,gear,haste):
+    if self.equipped(gear):
+      use_haste = self.stat == 'dps' and haste or 1
+      return self.magnitude(gear) * use_haste * self._duration / (self._rppm*60)
+    return 0
+  
+
+class BHotM(OnUseProc):
+  """ Beating Heart of the Mountain """
+  stat = 'multistrike'
+  _gear = 113931
+  _magnitude = 1467
+  _duration = 20
+  _cooldown = 120
+  
+class BEM(RPPMProc):
+  """ Blackheart Enforcer's Medallion """
+  stat = 'multistrike'
+  _gear = 116314
+  _magnitude = 1665
+  _duration = 10
+  _rppm = 0.92
+  
+class HBT(RPPMProc):
+  """ Humming Blackiron Trigger """
+  stat = 'crit'
+  _gear = 113985
+  _magnitude = 131*10.5
+  _duration = 10
+  _rppm = 0.92
+
+class MeatyDST(RPPMProc):
+  """ Meaty Dragonspine Trophy """
+  stat = 'haste'
+  _gear = 118114
+  _magnitude = 1913
+  _duration = 10
+  _rppm = 0.92
+
+class ScalesOfDoom(RPPMProc):
+  """ Scales of Doom """
+  stat = 'multistrike'
+  _gear = 113612
+  _magnitude = 1743
+  _duration = 10
+  _rppm = 0.92
       
-      
-import inspect, sys
-def procs_computable(hunter):
-  _procs = inspect.getmembers(sys.modules[__name__], lambda term: getattr(term,'computable',False))
-  _procs = [k for name,k in _procs if issubclass(k,Proc)]
-  procs = {}
-  for k in _procs:
-    o = k(hunter)
-    procs[o.proc_id] = o
-  return procs
+def proc_info(gear,haste):
+  info = {}
+  for stat in ('dps','agility','crit','haste','mastery','multistrike','versatility',):    
+    klass = inspect.getmembers(sys.modules[__name__],lambda term: getattr(term,'stat','') == stat)
+    on_use = [p() for name,p in inspect.getmembers(sys.modules[__name__],lambda term: getattr(term,'stat','') == stat) if isinstance(p,type) and issubclass(p,OnUseProc)]
+    rppm = [p() for name,p in inspect.getmembers(sys.modules[__name__],lambda term: getattr(term,'stat','') == stat) if isinstance(p,type) and issubclass(p,RPPMProc)]
+    
+    proc_info = [proc.info(gear,haste) for proc in on_use+rppm if proc]
+    totals = []
+    for proc in proc_info:
+      totals.append({'name':proc['name'],'effect':proc['effect']})
+    info[stat] = {'summary':totals,
+                  'total':sum([p['effect'] for p in proc_info]),
+                  'info':proc_info}
+  return info
+
+res = proc_info([{'id':113931,'bonus':'normal'}],1.24)

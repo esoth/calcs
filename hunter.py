@@ -21,6 +21,7 @@ class Hunter(object):
   
   def do_stats(self):
     complist = [('gear','Gear'),
+                ('proc','From procs (avg)'),
                 ('flask','Flask'),
                 ('food','Food'),
                 ('racial','Racial'),
@@ -95,6 +96,15 @@ class Hunter(object):
                    'total': '%.02f' % self.focus_gen()})
                                
     return _stats
+  
+  def do_procs(self,proc_info):
+    """ to do """
+    self.agility.proc(proc_info['agility']['total'])
+    self.crit.proc(proc_info['crit']['total'])
+    self.haste.proc(proc_info['haste']['total'])
+    self.mastery.proc(proc_info['mastery']['total'])
+    self.multistrike.proc(proc_info['multistrike']['total'])
+    self.versatility.proc(proc_info['versatility']['total'])
   
   def setgear(self,**kw):
     """ Update gear values for all stats """

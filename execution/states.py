@@ -483,7 +483,7 @@ class DireBeast(State):
     if self._timer <= 0:
       self._stacks -= 1
       self._timer = self.speed() # reset
-      return 5
+      return 2
     else:
       return 0
 

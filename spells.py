@@ -392,7 +392,7 @@ class BlackArrow(MagicSpell):
   computable = True
   name = "Black Arrow"
   _weapon = 0
-  _ap = 5.1
+  _ap = 4.0
   _casttime = GCD
   _focus = 35
   _cd = 30
@@ -455,7 +455,7 @@ class CobraShot(MagicSpell):
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  _ap = .42 * 4
+  _ap = .39 * 4
   _casttime = GCD
   _focus = 15
   _cd = 6
@@ -505,7 +505,7 @@ class MultiShot(PhysicalSpell):
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
-  _ap = 1.75
+  _ap = 1.60
   _duration = 15
   
   def instant(self):

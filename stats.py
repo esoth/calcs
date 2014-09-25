@@ -16,6 +16,7 @@ class Stat(object):
   procs = []
   
   # defaults - always call the method, but default the methods just return these
+  _proc = float(0)
   _gear = float(0)
   _food = float(0)
   _flask = float(0)
@@ -36,6 +37,12 @@ class Stat(object):
       self._gear = value
     else:
       return self._gear
+      
+  def proc(self,value=''):
+    if value:
+      self._proc = value
+    else:
+      return self._proc
   
   def food(self,value=''):
     if value:
@@ -74,7 +81,7 @@ class Stat(object):
     return 1
   
   def ratings(self):
-    return self.attunement()*sum([self.gear(), self.food(), self.flask()])
+    return self.attunement()*sum([self.gear(), self.proc(), self.food(), self.flask()])
   
   def total_static(self):
     """ The total at all times, before procs """
@@ -87,9 +94,6 @@ class Stat(object):
   
   def total_display(self):
     return '%.02f%%' % self.total()
-  
-  def sum_procs(self, procs=[]):
-    return sum([p.average() for p in self.procs])
     
 class AgilityStat(Stat):
   """ Behaves a bit differently than ratings based stats """
@@ -267,26 +271,3 @@ class MultistrikeStat(Stat):
   def attunement(self):
     """ 5% more multistrike from rating sources for SV """
     return self.hunter.spec == SV and 1.05 or 1
-
-class Proc(Calc):
-  rppm = 1.0
-  magnitude = float(0)
-  duration = float(0)
-  static_haste = 1.0
-  
-  def average(self):
-    return self.magnitude*self.rppm/(6.0/self.static_haste)
-  
-  def uptime(self):
-    return float(0)
-
-class ProcManager(object):
-  agility = []
-  haste = []
-  crit = []
-  mastery = []
-  multistrike = []
-  versatility = []
-  
-  def proc_table(self):
-    pass
