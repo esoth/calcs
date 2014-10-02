@@ -351,7 +351,7 @@ class AutoShot(PhysicalSpell):
 class PoisonedAmmo(MagicSpell):
   computable = True
   name = "Poisoned Ammo (Exotic Ammunitions)"
-  _ap = .48
+  _ap = .32
   
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
@@ -380,7 +380,7 @@ class IncendiaryAmmo(MagicSpell):
 class ArcaneShot(MagicSpell):
   computable = True
   name = "Arcane Shot"
-  _weapon = 1.0
+  _weapon = 1.1
   _casttime = GCD
   _focus = 30
   
@@ -392,7 +392,7 @@ class BlackArrow(MagicSpell):
   computable = True
   name = "Black Arrow"
   _weapon = 0
-  _ap = 4.0
+  _ap = 4.4
   _casttime = GCD
   _focus = 35
   _cd = 30
@@ -444,7 +444,7 @@ class AimedShot(PhysicalSpell):
 class CobraShot(MagicSpell):
   computable = True
   name = "Cobra Shot"
-  _weapon = 0.6
+  _weapon = 0.66
   _casttime = 2
   _focus = -14
   
@@ -455,7 +455,7 @@ class CobraShot(MagicSpell):
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
-  _ap = .39 * 4
+  _ap = .429 * 4
   _casttime = GCD
   _focus = 15
   _cd = 6
@@ -467,7 +467,7 @@ class ExplosiveShot(MagicSpell):
 class KillShot(PhysicalSpell):
   computable = True
   name = "Kill Shot"
-  _weapon = 5.5
+  _weapon = 7.59
   _casttime = GCD
   _cd = 10
   
@@ -494,7 +494,7 @@ class KillCommand(PhysicalSpell):
 class MultiShot(PhysicalSpell):
   computable = True
   name = "Multi-Shot"
-  _weapon = .3
+  _weapon = .4
   _focus = 40
   _aoe = 1
 
@@ -505,7 +505,7 @@ class MultiShot(PhysicalSpell):
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
-  _ap = 1.60
+  _ap = 1.76
   _duration = 15
   
   def instant(self):
