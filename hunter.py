@@ -114,7 +114,7 @@ class Hunter(object):
 
   def weapondmg(self,normalize=True,ap=1):
     """ Weapon damage is average of weapon's min and max, plus AP/3.5 * Weapon Speed """
-    wpn = (self.weaponmin + self.weaponmax) / 2
+    wpn = (self.weaponmin + self.weaponmax) / 2.0
     # ap parameter is bonus ap, probably from Improved Focus Fire
     ap = self.ap() * ap / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
     return wpn + ap

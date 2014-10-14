@@ -92,7 +92,7 @@ def runner(hunter,options,aoe=False,lastcalc=0):
         if pet_basic:
           pb_counter += 1
         pet_ending_focus = min(pet_max_focus,pet_ending_focus)
-        pet_auto = pet.auto(hunter,states) * time * pt_modifiers * p_modifiers
+        pet_auto = pet.auto(hunter,states) * time/1.10 * pt_modifiers * p_modifiers # 10% spiked collar assumed
         pet_auto_sum += pet_auto
         if states['Beast Cleave'].active():
           beast_cleave_sum += (pet_auto + pet_basic) * max(0,(options['aoe1'] - 1)) # perk makes it 100%?
