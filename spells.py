@@ -544,7 +544,7 @@ class ExplosiveTrap(MagicSpell):
   computable = True
   name = "Explosive Trap"
   _cd = 30
-  _ap = .0427 * 11
+  _ap = .085 * 11
   _duration = 20
   _spec = 1.3
   _aoe = 1
