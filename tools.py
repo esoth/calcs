@@ -4,7 +4,7 @@ def armormod():
   """ 1-1938/(1938+5234); 1938 is boss armor, 134*103-11864; K=3610 """
   base = 1938.0
   return 1.0-base/(base+3610)
-  
+
 # races
 HUMAN = 1
 ORC = 2
@@ -106,7 +106,7 @@ SERVERS = _servers
 SERVER_NAMES = {}
 for slug,name in SERVERS:
   SERVER_NAMES[slug] = name
-    
+
 def tooltip(compid,value):
   if compid in ('buff','armor',):
     return '%.02f%%' % value
@@ -116,8 +116,8 @@ def tooltip(compid,value):
     return value == 1 and '--' or '%.02f%%' % (value*100.0)
   elif compid == 'spell':
     return '%.02f%%' % (value*100.0)
-  elif compid == 'racial' and value <= 100: # humans actually get a rating
-    return '%.02f%%' % value
+  elif compid == 'racial' and value <= 1: # humans actually get a rating
+    return '%.02f%%' % (value*100.0)
   elif isinstance(value,float):
     return '%.02f' % value
   else:

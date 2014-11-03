@@ -19,7 +19,7 @@ class Spell(Calc):
   _cd = 0
   _duration = 0
   _aoe = 0 # other targets take this percent
-  
+
   def weapon(self):
     return self._weapon
   def ap(self):
@@ -42,7 +42,7 @@ class Spell(Calc):
     return self._duration
   def aoe(self):
     return self._aoe
-  
+
   def attributes(self):
     _attributes = []
     _attributeslist = (('weapon','Weapon co.'),
@@ -61,7 +61,7 @@ class Spell(Calc):
                        ('damage','Damage'),
                        ('dps','DPCT'),
                        ('regular_hit','Regular hit'))
-    
+
     for attrid,attrtitle in _attributeslist:
       to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec','perk','versatility','multistrike')
       to_double = ('speed','base','damage','dps','regular_hit',)
@@ -79,7 +79,7 @@ class Spell(Calc):
         attr['description'] = func.func_doc.strip()
       if getattr(self,attrid)() or attrid != 'armor': # don't show 0 armor
         _attributes.append(attr)
-    
+
     if self.lone():
       attr = {'id':'lone',
               'title':'Lone Wolf',
@@ -87,15 +87,15 @@ class Spell(Calc):
               'value': '%.02f%%' % (self.lone()*100)}
       _attributes.insert(-3,attr)
     return _attributes
-  
+
   def __init__(self, hunter):
     """ Must be initiated with a hunter object """
     self.hunter = hunter
-  
+
   def base(self,ap=1):
     """ Base damage from AP and/or Weapon """
     return self.hunter.weapondmg(ap=ap) * self.weapon() + ap * self.hunter.ap() * self.ap()
-  
+
   def multistrike(self):
     """ Two independent chances to do 30% damage = dmg * (1 +.6 * multi) """
     # v + 2*v*m*.3
@@ -110,27 +110,30 @@ class Spell(Calc):
     haste = self.hunter.haste.total()
     return max(GCD,self._casttime/haste)
 
-  def critmod(self):
+  def critmod(self,states):
     base = 0
     if self.hunter.meta.spec == 1:
       base += self.hunter.mastery.total()/100.0
+      if self.hunter.rylakstalker4() and states and states['Rapid Fire'].active():
+        base += .03
+        print base
     if self.hunter.meta.race in (DWARF,TAUREN):
       base += .04
     return base
-    
-  def totalcritmod(self):
+
+  def totalcritmod(self,states={}):
     """ Takes into account increased crit chance and/or modifier unique to this spell"""
     crit_chance = min(self.critchance() + self.hunter.crit.total()/100.0,1)
-    crit_mod = self.critmod() + 2.00
+    crit_mod = self.critmod(states) + 2.00
     return (crit_mod * crit_chance + (1-crit_chance))
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return 1
-    
+
   def damage(self, states={}):
     ap = states and states['Focus Fire'].active() and states['Focus Fire'].ap_modifier() or 1
-    dmg = self.base(ap) * self.totalcritmod()
+    dmg = self.base(ap) * self.totalcritmod(states)
     if self.armor():
       dmg = dmg * self.armor()
     if self.buff():
@@ -149,9 +152,9 @@ class Spell(Calc):
       dmg = dmg * self.versatility()
     if self.multistrike():
       dmg = dmg * self.multistrike()
-      
+
     return dmg
-  
+
   def regular_hit(self, states={}):
     """ No crit or multistrike """
     dmg = self.base()
@@ -171,32 +174,32 @@ class Spell(Calc):
       dmg = dmg * self.lone()
     if self.versatility():
       dmg = dmg * self.versatility()
-      
+
     return dmg
-  
+
   def modifiers(self):
     """ additional modifiers """
     return 0
-  
+
   def mastery(self):
     """ Sniper training for MM """
     if self.hunter.meta.spec == MM:
       return 1+self.hunter.mastery.total()/100.0
     return 0
-  
+
   def speed(self):
     hasted = self.casttime()/self.hunter.haste.total()
     return max(1.0,hasted)
-  
+
   def dps(self):
     dmg = self.damage()
     speed = self.speed()
     return dmg/speed
-  
+
   def special(self):
     """ We might need to have a special consideration, like a guaranteed crit """
     return self.damage()
-  
+
   def perk(self):
     """ Draenor perk """
     return 0
@@ -208,11 +211,11 @@ class Spell(Calc):
 class PhysicalSpell(Spell):
   _armor = armormod()
   _buff = 1.05
-  
+
   def buff(self):
     """ Physical vulnerability debuff """
     return super(PhysicalSpell,self).buff()
-    
+
 class MagicSpell(Spell):
   """ Magic Damage for Survival mastery """
   _buff = 1.05
@@ -220,7 +223,7 @@ class MagicSpell(Spell):
   def buff(self):
     """ Magic vulnerability debuff """
     return super(MagicSpell,self).buff()
-    
+
   def mastery(self):
     """ Sniper training for MM, Magic damage for SV """
     if self.hunter.meta.spec == SV:
@@ -236,7 +239,7 @@ class ArcaneTorrent(Spell):
   _casttime = 0
   _cd = 120
   _focus = -15
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
@@ -283,7 +286,7 @@ class FocusFire(Spell):
 class TouchOfTheGrave(MagicSpell):
   computable = True
   name = "Touch of the Grave"
-    
+
   def damage(self, states={}):
     """ Unknown proc rate. Set to 30s for now """
     dmg = (1932+2244)/2
@@ -297,12 +300,12 @@ class TouchOfTheGrave(MagicSpell):
       dmg = dmg * self.versatility()
     modifiers = product([s.damage_modifier() for s in states.values()])
     dmg *= modifiers
-      
+
     return dmg
-  
+
   def regular_hit(self, states={}):
     return self.damage(states)
-  
+
 
 class DireBeast(PhysicalSpell):
   computable = True
@@ -310,7 +313,7 @@ class DireBeast(PhysicalSpell):
   _duration = 15
   _ap = .5714 # http://www.esoth.com/blog/warlords-of-draenor-hunter-theorycrafting
   _cd = 30
-  
+
   def damage(self,states={}):
     t_modifiers = product([s.time_modifier() for s in states.values()])
     attacks = int(15/(2/self.hunter.haste.total()/t_modifiers))+1
@@ -321,7 +324,7 @@ class DireBeast(PhysicalSpell):
     if self.hunter.meta.spec==BM:
       dmg *= (1+self.hunter.mastery.total()/100.0+.2)
     return dmg
-  
+
   def regular_hit(self):
     dmg = self.ap()*self.hunter.ap()
     dmg *= self.armor()
@@ -334,15 +337,15 @@ class AutoShot(PhysicalSpell):
   name = "Auto Shot"
   _weapon = 1.0
   _ap = 0
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
-  
+
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
     return hasted
-  
+
   def dps(self,states={}):
     dmg = self.damage(states)
     speed = self.speed()
@@ -352,11 +355,11 @@ class PoisonedAmmo(MagicSpell):
   computable = True
   name = "Poisoned Ammo (Exotic Ammunitions)"
   _ap = .32
-  
+
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
     return hasted
-  
+
   def dps(self,states={}):
     dmg = self.damage(states)
     speed = self.speed()
@@ -383,7 +386,7 @@ class ArcaneShot(MagicSpell):
   _weapon = 1.1
   _casttime = GCD
   _focus = 30
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
@@ -398,7 +401,7 @@ class BlackArrow(MagicSpell):
   _cd = 30
   _spec = 1.3
   _duration = 20
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
@@ -410,11 +413,11 @@ class BlackArrow(MagicSpell):
 class ChimeraShot(MagicSpell):
   computable = True
   name = "Chimera Shot"
-  _weapon = 3.85
+  _weapon = 5.10
   _casttime = GCD
   _focus = 35
   _cd = 9
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
@@ -422,36 +425,36 @@ class ChimeraShot(MagicSpell):
 class AimedShot(PhysicalSpell):
   computable = True
   name = "Aimed Shot"
-  _weapon = 3.5
+  _weapon = 4.2
   _casttime = 2.5
   _focus = 50
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
- 
+
   def damage(self, states={}):
     base = super(AimedShot,self).damage(states)
     if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
       # we can assume this is a MM hunter
       base = base/self.totalcritmod()
       crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2 + self.critmod()
+      crit_mod = 2 + self.critmod(states)
       crit = (crit_mod * crit_chance + (1-crit_chance))
       return base * crit
     return base
-  
+
 class CobraShot(MagicSpell):
   computable = True
   name = "Cobra Shot"
   _weapon = 0.66
   _casttime = 2
   _focus = -14
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
-  
+
 class ExplosiveShot(MagicSpell):
   computable = True
   name = "Explosive Shot"
@@ -459,7 +462,7 @@ class ExplosiveShot(MagicSpell):
   _casttime = GCD
   _focus = 15
   _cd = 6
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
@@ -470,7 +473,7 @@ class KillShot(PhysicalSpell):
   _weapon = 7.59
   _casttime = GCD
   _cd = 10
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
@@ -482,11 +485,11 @@ class KillCommand(PhysicalSpell):
   _casttime = GCD
   _cd = 6
   _ap = 1.60
-  
+
   def spec(self):
     """ Combat Experience (1.5 base, 1.85 if Versatility) """
     return self.hunter.meta.talent7 == 2 and 1.85 or 1.5
-    
+
   def mastery(self):
     """ +dmg modifier if BM """
     return self.hunter.meta.spec == BM and (1+self.hunter.mastery.total()/100.0) or 0
@@ -507,7 +510,7 @@ class SerpentSting(MagicSpell):
   name = "Serpent Sting"
   _ap = 1.76
   _duration = 15
-  
+
   def instant(self):
     if self.hunter.meta.spec != 2:
       return 0
@@ -520,26 +523,26 @@ class SteadyShot(PhysicalSpell):
   _focus = -14
   _casttime = 2
   _weapon = .75
-  
+
   def lone(self):
     """ Lone Wolf talent """
     return self.hunter.meta.talent7 == 2 and self.hunter.meta.spec != 0 and 1.3
- 
+
   def damage(self, states={}):
     base = super(SteadyShot,self).damage(states)
     if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
       # we can assume this is a MM hunter
       base = base/self.totalcritmod()
       crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2 + self.critmod()
+      crit_mod = 2 + self.critmod(states)
       crit = (crit_mod * crit_chance + (1-crit_chance))
       return base * crit
     return base
-  
+
   def casttime(self):
     haste = self.hunter.haste.total()
     return self._casttime/haste
-  
+
 class ExplosiveTrap(MagicSpell):
   computable = True
   name = "Explosive Trap"
@@ -562,7 +565,7 @@ class GlaiveToss(PhysicalSpell):
   _ap = .361 * 4 * 2
   _cd = 15
   _aoe = .25
-  
+
   def ap(self):
     """ 36.1% * 2 (two glaives) * 4 (primary target). """
     return super(GlaiveToss,self).ap()
@@ -575,7 +578,7 @@ class Barrage(PhysicalSpell):
   _casttime = 3
   _weapon = 9.6
   _aoe = .25
-  
+
   def casttime(self):
     haste = self.hunter.haste.total()
     return self._casttime/haste
@@ -595,7 +598,7 @@ class MurderOfCrows(PhysicalSpell):
   _ap = .65 * 15 # http://www.esoth.com/blog/warlords-of-draenor-hunter-theorycrafting
   _cd = 60
   _focus = 30
-    
+
   def mastery(self):
     """ +dmg modifier if BM or MM"""
     return self.hunter.meta.spec in (BM, MM,) and (1+self.hunter.mastery.total()/100.0) or 0
@@ -604,16 +607,16 @@ class FocusingShot(PhysicalSpell):
   computable = True
   name = "Focusing Shot"
   _weapon = 1.20
-  _casttime = 3
+  _casttime = 2.5
   _focus = -50
- 
+
   def damage(self, states={}):
     base = super(FocusingShot,self).damage(states)
     if states and (states['Careful Aim'].active() or states['Rapid Fire'].active()):
       # we can assume this is a MM hunter
       base = base/self.totalcritmod()
       crit_chance = min(self.critchance() + .6 + self.hunter.crit.total()/100.0,1)
-      crit_mod = 2 + self.critmod()
+      crit_mod = 2 + self.critmod(states)
       crit = (crit_mod * crit_chance + (1-crit_chance))
       return base * crit
     return base
@@ -624,7 +627,7 @@ def do_spells(meta, hunter):
   spelltable = []
   _spells = inspect.getmembers(sys.modules[__name__], lambda term: getattr(term,'computable',False))
   sorted(_spells, key=lambda term: term[0])
-    
+
   for name,klass in _spells:
     spell = klass(hunter)
     spelltable.append({'name':spell.name,

@@ -13,3 +13,4 @@ class HunterMeta(object):
   talent7 = 0
   spec = 0 # 0=BM, 1=MM, 2=SV
   glyphs = []
+  enchants = ''

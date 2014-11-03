@@ -3,32 +3,32 @@ from tools import *
 class Pet(object):
   _cooldown = 3
   _counter = 0
-  
+
   def ap(self,hunter):
-    return hunter.ap()/3.0
-  
+    return hunter.ap()*.6
+
   def focus_gen(self,hunter):
     return hunter.focus_gen()
-  
+
   def critmod(self,hunter):
     crit_chance = min(hunter.crit.total()/100.0 + .1,1)
     crit_mod = 2.00
     return (crit_mod * crit_chance + (1-crit_chance))
-    
+
   def combat_experience(self,hunter):
-    return hunter.meta.talent7 == 2 and 1.85 or 1.5
-  
+    return hunter.meta.talent7 == 2 and 1.70 or 1.5
+
   def mastery(self,hunter):
     bm_mas =  (1++hunter.mastery.total()/100.0)
     return hunter.meta.spec == 0 and bm_mas or 1
-  
+
   def versatility(self,hunter):
     return (1+hunter.versatility.total()/100.0)
-  
+
   def multistrike(self,hunter):
     mchance = hunter.multistrike.total()/100.0
     return 1+.6*mchance
-  
+
   def base(self,hunter,states={}):
     ap = self.ap(hunter)
     if states and states['Focus Fire'].active():
@@ -40,7 +40,7 @@ class Pet(object):
     ap = self.ap(hunter)
     if states and states['Focus Fire'].active():
       ap *= 1.1
-    
+
     dmg = ap
     dmg *= armormod()
     dmg *= self.critmod(hunter)
@@ -49,18 +49,18 @@ class Pet(object):
     dmg *= self.combat_experience(hunter)
     dmg *= self.mastery(hunter)
     dmg *= 1.1 # spiked collar
-    
+
     if hunter.meta.spec == 0:
       dmg *= 1.2 # empowered pets
-    
+
     if hunter.meta.talent5 == 1:
       dmg *= 1.5
-    
+
     if states and states['Bestial Wrath'].active():
       dmg *= 1.2
 
     return dmg
-  
+
   def do_basic(self,hunter,focus,time,states):
     dmg = 0
     emp = False
@@ -87,7 +87,7 @@ class Pet(object):
       dmg = dmg / self.critmod(hunter) * 2 # guaranteed crit
     focus += time * self.focus_gen(hunter)
     return dmg,focus
-  
+
   def auto(self,hunter,states={}):
     dmg = self.base(hunter,states)
     dmg *= armormod()
@@ -98,7 +98,7 @@ class Pet(object):
     if hunter.meta.spec == 0:
       dmg *= self.mastery(hunter)*1.2 # empowered pets
     return dmg
-  
+
   def do_spells(self,hunter):
     melee = {'name':'Pet (melee)',
              'id':'pet-melee',

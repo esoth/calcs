@@ -8,12 +8,12 @@ class Condition:
   # CD(s) and return True or False if it's available
   # A priority rotation list will then order conditions in a certain way and select the first
   # spell that returns a condition of True
- 
+
   def __init__(self,hunter,options,aoe):
     self.hunter = hunter
     self.options = options
     self.aoe = aoe
-   
+
   def validate(self):
     return True
 
@@ -298,11 +298,11 @@ class BeastCleaveCondition(Condition):
 
 
 
- 
+
 def fpassive(states, hunter, time):
   t_modifiers = product([s.time_modifier() for s in states.values()])
   return time * hunter.focus_gen() * t_modifiers
- 
+
 def spell_check(hunter,spell,spell_name,focus,arc_cost,cds,states):
   """ 1. If less than cobra/focusing shot cast time, check if we have focus to do arc + spell
       2. If less than cobra/focusing shot cast time + 1, check if we have focus to do arc + cobra + spell
@@ -311,23 +311,23 @@ def spell_check(hunter,spell,spell_name,focus,arc_cost,cds,states):
   foc = FocusingShot(hunter)
   cobra_speed = cob.casttime() / product([s.time_modifier() for s in states.values()])
   focusing_speed = foc.casttime() / product([s.time_modifier() for s in states.values()])
- 
+
   cost = spell.focus()
- 
+
   if hunter.meta.talent7 == 1:
     cast_speed = focusing_speed
     f_cast = abs(foc.focus())
   else:
     cast_speed = cobra_speed
     f_cast = abs(cob.focus())
-   
+
   arc_cost1 = arc_cost2 = cost
   if states['Bestial Wrath'].duration() >= cast_speed:
     cost /= 2
     arc_cost1 /= 2
   if states['Bestial Wrath'].duration() >= cast_speed + 1:
     arc_cost2 /= 2
-   
+
   check = False
   if cds[spell_name].cdtime <= cast_speed:
     check = focus + fpassive(states,hunter,1) > cost + arc_cost1
@@ -348,20 +348,20 @@ class BMArcaneSpecialCondition(Condition):
     kc = KillCommand(self.hunter)
     arc = ArcaneShot(self.hunter)
     moc = MurderOfCrows(self.hunter)
-   
+
     arc_cost = arc.focus()
-   
+
     if states['Thrill of the Hunt'].active():
       arc_cost -= 20
-    
+
     steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
-   
+
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
     br_check = self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or True
     amoc_check = self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or True
-   
+
     checks = [not steady_focus,
               br_check or fervor,
               spell_check(self.hunter,kc,'Kill Command',focus,arc_cost,cds,states) or fervor,
@@ -379,20 +379,20 @@ class SVArcaneSpecialCondition(Condition):
     arc = ArcaneShot(self.hunter)
     moc = MurderOfCrows(self.hunter)
     br = Barrage(self.hunter)
-   
+
     arc_cost = arc.focus()
-   
+
     if states['Thrill of the Hunt'].active():
       arc_cost -= 20
-    
+
     steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
-   
+
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
     br_check = self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,arc_cost,cds,states) or True
     amoc_check = self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,arc_cost,cds,states) or True
-   
+
     checks = [not steady_focus,
               br_check or fervor,
               spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or fervor,
@@ -411,25 +411,23 @@ class MMAimedSpecialCondition(Condition):
     aim = AimedShot(self.hunter)
     moc = MurderOfCrows(self.hunter)
     br = Barrage(self.hunter)
-   
+
     aim_cost = aim.focus()
-   
+
     if states['Thrill of the Hunt'].active():
       aim_cost -= 20
-    
+
     steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
-   
+
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
     br_check = self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or True
     amoc_check = self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,aim_cost,cds,states) or True
-   
+
     checks = [not steady_focus,
               br_check or fervor,
-              amoc_check or fervor,
-              self.hunter.meta.talent6 == TIER6.index(BARRAGE) and spell_check(self.hunter,br,'Barrage',focus,aim_cost,cds,states) or fervor,
-              self.hunter.meta.talent5 == TIER5.index(AMURDEROFCROWS) and spell_check(self.hunter,moc,'A Murder of Crows',focus,aim_cost,cds,states) or fervor]
+              amoc_check or fervor]
     return False not in checks
 
 class BWHoldCondition(Condition):
@@ -437,7 +435,7 @@ class BWHoldCondition(Condition):
   title = "Hold Bestial Wrath for Kill Command"
   id = 'BH'
   computable = True
- 
+
   def validate(self, cds, states, focus, time):
     spell = KillCommand(self.hunter)
     if self.options['bm3']:
@@ -448,7 +446,7 @@ class NoDBBWCondition(Condition):
   title = "No Dire Beast during BW"
   id = 'NDB'
   computable = True
- 
+
   def validate(self, cds, states, focus, time):
     if self.options['bm4']:
       return not states['Bestial Wrath'].active()
@@ -458,7 +456,7 @@ class NoFFBWCondition(Condition):
   title = "No Focus Fire during BW"
   id = 'NFF'
   computable = True
- 
+
   def validate(self, cds, states, focus, time):
     if self.options['bm5']:
       return not states['Bestial Wrath'].active()
@@ -468,7 +466,7 @@ class FocusFireSpecialCondition(Condition):
   title = "Use Focus Fire just before BW"
   id = 'FFB'
   computable = True
- 
+
   def validate(self, cds, states, focus, time):
     return self.options['bm6'] and not states['Focus Fire'].active() and states['Frenzy'].stacks() and cds['Bestial Wrath'].cdtime <= 2
 
@@ -477,7 +475,7 @@ class AimedShotOnlyCACondition(Condition):
   title = "Don't use anything but Aimed Shot during Careful Aim"
   id = 'CAA'
   computable = True
- 
+
   def validate(self, cds, states, focus, time):
     if self.options['mm1']==0:
       return not states['Careful Aim'].active() and not states['Rapid Fire'].active()
@@ -487,7 +485,7 @@ class NoChimeraCACondition(Condition):
   title = "Don't use anything but Aimed Shot during Careful Aim"
   id = 'CAA'
   computable = True
- 
+
   def validate(self, cds, states, focus, time):
     if self.options['mm1']==1:
       return not states['Careful Aim'].active() and not states['Rapid Fire'].active()
@@ -497,7 +495,7 @@ class InstantShotsCondition(Condition):
   title = "Only cast instant shots if after Focusing Shot"
   id = 'AFS'
   computable = True
-   
+
   def validate(self, cds, states, focus, time):
     if self.options['mm2'] and not states['Focusing Shot'].active():
       return False
@@ -507,7 +505,7 @@ class AoEMainNukesCondition(Condition):
   title = "Only cast instant shots if after Focusing Shot"
   id = 'AFS'
   computable = True
-   
+
   def validate(self, cds, states, focus, time):
     return self.options['aoe2']
 
@@ -515,12 +513,12 @@ class AoEMainNukesFocusCondition(Condition):
   title = "Only cast instant shots if after Focusing Shot"
   id = 'AFS'
   computable = True
-   
+
   def validate(self, cds, states, focus, time):
     if self.options['aoe2'] and self.options['aoe3']:
       return focus > self.options['aoe3']
     return True
-  
+
 
 
 

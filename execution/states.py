@@ -14,10 +14,10 @@ class State(object):
   _stacks = 0
   _active = False
   _uptime = 0
-  
+
   def __init__(self,hunter):
     self.hunter = hunter
-  
+
   def damage_modifier(self):
     return self._damage_modifier
   def pet_damage_modifier(self):
@@ -40,12 +40,12 @@ class State(object):
     return self._pet_focus_gains
   def uptime(self):
     return self._uptime
- 
+
   def info(self, states, time):
     return {'state_id':self.state_id,
             'active':self.active(),
             'tooltip':self.tooltip(states,time)}
-  
+
   def tooltip(self, states, time=None):
     tt = "State = %s" % self.state_id
     if self.duration():
@@ -61,7 +61,7 @@ class State(object):
     if self.focus_gains(states,time):
       tt += ", +focus: %.02f" % self.focus_gains(states,time)
     return tt
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     pass
 
@@ -72,16 +72,16 @@ class BestialWrathState(State):
   _pet_damage_modifier = 1.2
   _focus_modifier = 0.5
   _duration = 0
-  
+
   def damage_modifier(self):
     return self.active() and self._damage_modifier or 1
-  
+
   def petdamage_modifier(self):
     return self.active() and self._pet_damage_modifier or 1
-  
+
   def focus_modifier(self):
     return self.active() and self._focus_modifier or 1
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._duration = spells.BestialWrath(self.hunter).duration() # the behavior of this spell class is outside the scope of this
@@ -89,7 +89,7 @@ class BestialWrathState(State):
       self._duration -= time
     if self.active():
       self._uptime += time
-  
+
   def active(self):
     return self.duration() > 0
 
@@ -98,7 +98,7 @@ class SteadyFocus(State):
   state_id = 'Steady Focus'
   _stacks = 0
   _timer = 0
-  
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS):
       if actionid == 'Focusing Shot':
@@ -111,9 +111,9 @@ class SteadyFocus(State):
       else:
         self._stacks = 0
         self._timer -= time
-      
+
   def active(self):
-    return self._timer > 0   
+    return self._timer > 0
 
 class CobraStrikes(State):
   computable = True
@@ -127,10 +127,10 @@ class CobraStrikes(State):
       self._stacks += 1
     if actionid == 'Arcane Shot':
       self._timer += .20
-  
+
   def use_stack(self):
     self._stacks -= 1
- 
+
   def active(self):
     return self.hunter.meta.spec == BM and self._stacks
 
@@ -144,16 +144,16 @@ class GoForTheThroat(State):
     if self.active(): # reset
       self._timer = self._timer - self.time_to_proc()
     self._timer += time * t_modifier
- 
+
   def active(self):
     return self.hunter.meta.spec == BM and self._timer >= self.time_to_proc()
- 
+
   def time_to_proc(self):
     # multiply time by by t_modifier? Then
     speed = self.hunter.weaponspeed/self.hunter.haste.total()
     crit = self.hunter.crit.total()/100.0
     return speed/crit
-  
+
   def pet_focus_gains(self,states,time):
     return self.active() and 15 or 0
 
@@ -161,20 +161,20 @@ class Invigoration(State):
   computable = True
   state_id = 'Invigoration'
   _timer = 0
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self.active(): # reset
       self._timer = self._timer - self.time_to_proc()
-   
+
     if pet_basic:
       self._timer += 1
- 
+
   def time_to_proc(self):
     return 1/.15
- 
+
   def active(self):
     return self._timer >= self.time_to_proc()
-   
+
   def focus_gains(self,states,time):
     return self.active() and 20 or 0
 
@@ -182,16 +182,16 @@ class LockAndLoadProc(State):
   computable = True
   state_id = 'Lock and Load (proc)'
   _timer = 0
-  
+
   def time_to_proc(self):
     return 1/.2*2 # 10
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self._timer >= self.time_to_proc(): # reset
       self._timer -= self.time_to_proc()
     if states['Black Arrow'].active():
       self._timer += time
-  
+
   def active(self):
     return self._timer >= self.time_to_proc()
 
@@ -200,15 +200,15 @@ class LockAndLoadState(State):
   state_id = 'Lock and Load'
   _active = False
   _stacks = 0
- 
+
   # going to need a class of procs to pass here
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     lnl = states['Lock and Load (proc)']
     if lnl.active():
-      self._stacks = 2     
+      self._stacks = 2
     elif actionid == 'Explosive Shot':
       self._stacks -= 1
- 
+
   def active(self):
     return self.stacks()
 
@@ -218,19 +218,19 @@ class RapidFire(State):
   _time_modifier = 1.4
   _active = False
   _duration = 0
- 
+
   def time_modifier(self):
     return self.active() and self._time_modifier or 1
-  
+
   def pet_time_modifier(self):
     return self.time_modifier()
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._duration = spells.RapidFire(self.hunter).duration()
     else:
       self._duration -= time
-   
+
   def active(self):
     return self.duration() > 0
 
@@ -241,16 +241,16 @@ class FocusFireState(State):
   _ap_modifier = 1.1
   _active = False
   _duration = 0
- 
+
   def time_modifier(self):
     return self.active() and self._time_modifier or 1
-  
+
   def pet_time_modifier(self):
     return self.time_modifier()
-  
+
   def ap_modifier(self):
     return self.active() and self._ap_modifier or 1
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._time_modifier = states['Frenzy']._last_max * .06 + 1
@@ -258,7 +258,7 @@ class FocusFireState(State):
       self._duration = spells.FocusFire(self.hunter).duration()
     else:
       self._duration -= time
-  
+
   def active(self):
     return self.duration() > 0
 
@@ -275,13 +275,13 @@ class FrenzyState(State):
       self._counter = 0
     if pet_basic:
       self._counter += .4
-  
+
   def stacks(self):
     return min(int(self._counter),5)
-  
+
   def active(self):
     return self.stacks()>=1
- 
+
   def pet_time_modifier(self):
     return self.stacks()*.04+1
 
@@ -290,19 +290,19 @@ class Berserking(State):
   state_id = 'Berserking'
   _time_modifier = 1.15
   _duration = -1
- 
+
   def time_modifier(self):
     return self.active() and self._time_modifier or 1
-  
+
   def pet_time_modifier(self):
     return self.time_modifier()
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._duration = spells.Berserking(self.hunter).duration()
     else:
       self._duration -= time
-      
+
   def active(self):
     return self.duration() > 0
 
@@ -311,13 +311,13 @@ class BlackArrowState(State):
   state_id = 'Black Arrow'
   _duration = 0
   _stacks = 1
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._duration = spells.BlackArrow(self.hunter).duration()
     else:
       self._duration -= time
-  
+
   def active(self):
     return self.duration() > 0
 
@@ -326,13 +326,13 @@ class ExplosiveTrapState(State):
   state_id = 'Explosive Trap'
   _duration = 0
   _stacks = 1
- 
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._duration = spells.ExplosiveTrap(self.hunter).duration()
     else:
       self._duration -= time
-  
+
   def active(self):
     return self.duration() > 0
 
@@ -349,13 +349,13 @@ class SerpentStingState(State):
     self._duration -= time
     if self.active():
       self._uptime += time
-  
+
   def uptime(self):
     return self._uptime
-  
+
   def active(self):
     return self.duration() > 0
-  
+
   def total(self):
     return self._total
 
@@ -369,7 +369,7 @@ class EnhancedBasicAttacksState(State):
       self._counter = 0.0
     if pet_basic:
       self._counter += .15
- 
+
   def active(self):
     return self._counter >= 1
 
@@ -418,7 +418,7 @@ class ThrillOfTheHuntState(State):
       if self._counter > 1: # reset and add stacks
         self._counter -= 1
         self._stacks = 3
-  
+
   def active(self):
     return bool(self.stacks())
 
@@ -460,12 +460,12 @@ class DireBeast(State):
   state_id = 'Dire Beast'
   _stacks = 0
   _timer = 2.5 # attacks about every 2.5 seconds
-  # no haste scaling? http://wod.wowhead.com/spell=120679#comments:id=1648296
+  # no haste scaling? http://www.wowhead.com/spell=120679#comments:id=1648296
   # this looks wrong. Looks like it's 2/haste ~ 9 attacks!
-  
+
   def speed(self):
     return 2/self.hunter.haste.total()
-  
+
   def stack_amount(self):
     return int(15/self.speed())+1
 
@@ -475,10 +475,10 @@ class DireBeast(State):
       self._timer = self.speed()
     elif self._stacks:
       self._timer -= time
-  
+
   def active(self):
     return bool(self._stacks)
- 
+
   def focus_gains(self,states,time):
     if self._timer <= 0:
       self._stacks -= 1
@@ -493,15 +493,15 @@ class TouchOfTheGraveProc(State):
   _counter = 0
   _total = 0
   _proc = 0
-    
+
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if self._proc >= 30 and self.hunter.meta.race == UNDEAD:
-      self._proc -= 30   
+      self._proc -= 30
       spell = spells.TouchOfTheGrave(self.hunter).damage(states)
       self._counter += 1
       self._total += spell
     self._proc += time
-  
+
   def counter(self):
     return self._counter
   def total(self):
@@ -519,11 +519,12 @@ class EnhancedAimedShotState(State):
       # we can assume this is a MM hunter
       crit_chance = min(.6 + self.hunter.crit.total()/100.0,1)
       self._counter += crit_chance
-  
+
   def active(self):
     return self._counter >= 1
- 
+
   def focus_gains(self,states,time):
+    mm2pc = self.hunter.rylakstalker2() and 8 or 0
     return self.active() and 20 or 0
 
 class Fervor(State):
@@ -541,20 +542,20 @@ class Fervor(State):
     else:
       self._max = 50
     self._duration -= time
- 
+
   def focus_gains(self,states,time):
     return self.active() and min(self._max,5.0*time) or 0
-  
+
   def pet_focus_gains(self,states,time):
     if self.active():
       return min(self._max,5.0*time)
-      
+
   def active(self):
     return self._duration > 0
-          
-      
-      
-      
+
+
+
+
 import inspect, sys
 def states_computable(hunter):
   _states = inspect.getmembers(sys.modules[__name__], lambda term: getattr(term,'computable',False))

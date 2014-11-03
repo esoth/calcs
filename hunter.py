@@ -1,13 +1,13 @@
 from huntermeta import HunterMeta
 from stats import *
 from tools import tooltip, orc_ap
-  
-class Hunter(object):  
+
+class Hunter(object):
   weaponmin = 0
   weaponmax = 0
   weaponspeed = 3
-  
-  def __init__(self, meta):
+
+  def __init__(self, meta, equipped):
     if isinstance(meta,HunterMeta):
       self.meta = meta
     else:
@@ -18,12 +18,14 @@ class Hunter(object):
     self.mastery = MasteryStat(meta)
     self.versatility = VersatilityStat(meta)
     self.multistrike = MultistrikeStat(meta)
-  
+    self.equipped = equipped
+
   def do_stats(self):
     complist = [('gear','Gear'),
                 ('proc','From procs (avg)'),
                 ('flask','Flask'),
                 ('food','Food'),
+                ('enchants','Enchants'),
                 ('racial','Racial'),
                 ('attunement','Attunement'),
                 ('spec','Special'),
@@ -36,7 +38,7 @@ class Hunter(object):
                 ('mastery','Mastery'),
                 ('versatility','Versatility'),
                 ('multistrike','Multistrike'),]
-    
+
     _stats = []
     for statid,stattitle in statlist:
       _components = []
@@ -94,9 +96,9 @@ class Hunter(object):
     _stats.append({'id': 'focusregen',
                    'title': 'Focus Regen',
                    'total': '%.02f' % self.focus_gen()})
-                               
+
     return _stats
-  
+
   def do_procs(self,proc_info):
     """ to do """
     self.agility.proc(proc_info['agility']['total'])
@@ -105,7 +107,15 @@ class Hunter(object):
     self.mastery.proc(proc_info['mastery']['total'])
     self.multistrike.proc(proc_info['multistrike']['total'])
     self.versatility.proc(proc_info['versatility']['total'])
-  
+
+  def rylakstalker2(self):
+    setids = (115545,115549,115546,115547,115548)
+    return len([e['id'] for e in self.equipped if e['id'] in setids]) >= 2
+
+  def rylakstalker4(self):
+    setids = (115545,115549,115546,115547,115548)
+    return len([e['id'] for e in self.equipped if e['id'] in setids]) >= 4
+
   def setgear(self,**kw):
     """ Update gear values for all stats """
     for k,v in kw.items():
@@ -118,15 +128,15 @@ class Hunter(object):
     # ap parameter is bonus ap, probably from Improved Focus Fire
     ap = self.ap() * ap / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
     return wpn + ap
-  
+
   def ap(self):
     """ 10% AP buff """
     orc = self.meta.race == ORC and orc_ap()
     return (self.agility.total()+orc)*1.10
-  
+
   def focus_gen(self):
     """ Base focus generation - 4 * haste """
     return self.haste.total()*4.0
-  
+
   def max_focus(self):
     return self.meta.spec in (0,1,) and 120 or 100
