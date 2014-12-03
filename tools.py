@@ -91,8 +91,10 @@ REGIONS = (('eu','EU'),('us','US'))
 # SERVERS - Get all US servers than all EU servers """
 _servers = []
 try:
+  print 
   _servers = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']]
 except:
+  print 'failed - https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY
   pass # kinda crashes the whole site otherwise!
 try:
   eu_realms = json.load(urlopen('https://eu.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']

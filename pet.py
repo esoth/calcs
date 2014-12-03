@@ -132,7 +132,7 @@ class Pet(object):
                'value':hunter.meta.spec == BM and '120.00%' or '100.00%',},
               {'id':'damage',
                'title':'Damage',
-               'value':tooltip('spell',self.auto(hunter)),},
+               'value':'%.02f' % self.auto(hunter)},
               {'id':'speed',
                'title':'Time per attack',
                'value':'%ss' % tooltip('time',2/1.1/hunter.haste.total())},

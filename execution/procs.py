@@ -13,11 +13,13 @@ class Proc(object):
   
   def magnitude(self,gear):
     for g in gear:
-      if g['id'] in self.gear():
+      if self.gear() == '*' or g['id'] in self.gear():
         return g['bonus'] in bonus and bonus[ g['bonus'] ] * self._magnitude or self._magnitude
     return self._magnitude
   
   def equipped(self,gear):
+    if self.gear() == '*':
+      return True
     for g in gear:
       if g['id'] in self.gear():
         return True
@@ -68,6 +70,14 @@ class BHotM(OnUseProc):
   _magnitude = 1467
   _duration = 20
   _cooldown = 120
+
+class SkullOfWar(OnUseProc):
+  """ Skull of War """
+  stat = 'crit'
+  _gear = 112318
+  _magnitude = 1272
+  _duration = 20
+  _cooldown = 115
   
 class BEM(RPPMProc):
   """ Blackheart Enforcer's Medallion """
@@ -92,6 +102,16 @@ class MeatyDST(RPPMProc):
   _magnitude = 1913
   _duration = 10
   _rppm = 0.92
+
+class MegawattFilament(RPPMProc):
+  """ Megawatt Filament """
+  stat = 'crit'
+  _magnitude = 750
+  _duration = 12
+  _rppm = 1.55
+  
+  def gear(self):
+    return '*'
 
 class ScalesOfDoom(RPPMProc):
   """ Scales of Doom """

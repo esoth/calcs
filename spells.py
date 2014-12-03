@@ -6,6 +6,25 @@ from stats import Calc
 
 GCD = 1
 
+hotfixes = {'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Cobra Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Explosive Trap': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Kill Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Multi-Shot': 1.3, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Steady Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Aimed Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Chimera Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Black Arrow': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Explosive Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Glaive Toss': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Powershot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Poisoned Ammo (Exotic Munitions)': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Incendiary Ammo (Exotic Munitions)': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Kill Command': 1.2, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
+          'Chimera Shot': 1/1.13, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
+          'Focusing Shot': 1.25, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
+  }
+
 class Spell(Calc):
   _weapon = 0.0 # a coefficient
   _ap = 0.0 # a coefficient
@@ -19,6 +38,10 @@ class Spell(Calc):
   _cd = 0
   _duration = 0
   _aoe = 0 # other targets take this percent
+  
+  def hotfix(self):
+    """ Oct 17/30. Hotfixes do not show up in the client data so you want see them in things like wowhead data """
+    return hotfixes.get(self.name,1.0)
 
   def weapon(self):
     return self._weapon
@@ -47,6 +70,7 @@ class Spell(Calc):
     _attributes = []
     _attributeslist = (('weapon','Weapon co.'),
                        ('ap','AP co.'),
+                       ('hotfix','Hotfixes'),
                        ('base','Base damage'),
                        ('totalcritmod','Crit'),
                        ('armor','Armor mit.'),
@@ -63,7 +87,7 @@ class Spell(Calc):
                        ('regular_hit','Regular hit'))
 
     for attrid,attrtitle in _attributeslist:
-      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec','perk','versatility','multistrike')
+      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec','perk','versatility','multistrike','hotfix')
       to_double = ('speed','base','damage','dps','regular_hit',)
       func = getattr(self,attrid)
       value = getattr(self,attrid)()
@@ -133,7 +157,7 @@ class Spell(Calc):
 
   def damage(self, states={}):
     ap = states and states['Focus Fire'].active() and states['Focus Fire'].ap_modifier() or 1
-    dmg = self.base(ap) * self.totalcritmod(states)
+    dmg = self.base(ap) * self.totalcritmod(states) * self.hotfix()
     if self.armor():
       dmg = dmg * self.armor()
     if self.buff():
@@ -353,8 +377,8 @@ class AutoShot(PhysicalSpell):
 
 class PoisonedAmmo(MagicSpell):
   computable = True
-  name = "Poisoned Ammo (Exotic Ammunitions)"
-  _ap = .32
+  name = "Poisoned Ammo (Exotic Munitions)"
+  _ap = .368
 
   def speed(self):
     hasted = self.hunter.weaponspeed/self.hunter.haste.total()
@@ -367,8 +391,8 @@ class PoisonedAmmo(MagicSpell):
 
 class IncendiaryAmmo(MagicSpell):
   computable = True
-  name = "Incendiary Ammo (Exotic Ammunitions)"
-  _weapon = .2
+  name = "Incendiary Ammo (Exotic Munitions)"
+  _weapon = .23
   _aoe = 1
 
   def speed(self):
@@ -484,11 +508,11 @@ class KillCommand(PhysicalSpell):
   _focus = 40
   _casttime = GCD
   _cd = 6
-  _ap = 1.60
+  _ap = 1.36
 
   def spec(self):
     """ Combat Experience (1.5 base, 1.85 if Versatility) """
-    return self.hunter.meta.talent7 == 2 and 1.85 or 1.5
+    return self.hunter.meta.talent7 == 2 and 1.70 or 1.5
 
   def mastery(self):
     """ +dmg modifier if BM """
@@ -519,7 +543,7 @@ class SerpentSting(MagicSpell):
 
 class SteadyShot(PhysicalSpell):
   computable = True
-  name = "SteadyShot"
+  name = "Steady Shot"
   _focus = -14
   _casttime = 2
   _weapon = .75
@@ -548,7 +572,7 @@ class ExplosiveTrap(MagicSpell):
   name = "Explosive Trap"
   _cd = 30
   _ap = .085 * 11
-  _duration = 20
+  _duration = 10
   _spec = 1.3
   _aoe = 1
 
