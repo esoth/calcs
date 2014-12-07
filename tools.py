@@ -94,15 +94,14 @@ try:
   print 
   _servers = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']]
 except:
-  print 'failed - https://us.api.battle.net/wow/realm/status?apikey=%s' % API_KEY
-  pass # kinda crashes the whole site otherwise!
+  _servers = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.battle.net/api/wow/realm/status'))['realms']]
 try:
   eu_realms = json.load(urlopen('https://eu.api.battle.net/wow/realm/status?apikey=%s' % API_KEY))['realms']
-  for r in eu_realms:
-    if (r['slug'],r['name']) not in _servers:
-      _servers.append((r['slug'],r['name']))
 except:
-  pass
+  eu_realms = [(r['slug'],r['name']) for r in json.load(urlopen('https://us.battle.net/api/wow/realm/status'))['realms']]
+for r in eu_realms:
+  if (r['slug'],r['name']) not in _servers:
+    _servers.append((r['slug'],r['name']))
 SERVERS = _servers
 
 SERVER_NAMES = {}
