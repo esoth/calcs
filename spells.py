@@ -13,7 +13,6 @@ hotfixes = {'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/163
           'Multi-Shot': 1.3, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Steady Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Aimed Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
-          'Chimera Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Black Arrow': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Explosive Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Glaive Toss': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
@@ -21,7 +20,7 @@ hotfixes = {'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/163
           'Poisoned Ammo (Exotic Munitions)': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Incendiary Ammo (Exotic Munitions)': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Kill Command': 1.2, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
-          'Chimera Shot': 1/1.13, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
+          'Chimera Shot': 1.15*(1/1.13), # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014 Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Focusing Shot': 1.25, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
   }
 
