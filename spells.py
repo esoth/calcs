@@ -9,10 +9,10 @@ GCD = 1
 hotfixes = {'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Cobra Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Explosive Trap': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
-          'Kill Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Kill Shot': 1.15*(1/1.10), # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Multi-Shot': 1.3, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Steady Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
-          'Aimed Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+          'Aimed Shot': 1.15*(1/1.10), # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Black Arrow': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Explosive Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Glaive Toss': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
