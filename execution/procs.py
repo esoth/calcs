@@ -6,12 +6,11 @@ class Proc(object):
   _gear = [999999]
   _magnitude = 0
   _duration = 0
-  _cooldown = 100
+  _cooldown = 0
   _stat = 'crit'
   
-  def __init__(self,stat=None):
-    if stat:
-      self._stat=stat
+  def __init__(self,*args):
+    pass
   
   def stat(self):
     return self._stat
@@ -34,7 +33,7 @@ class Proc(object):
     return False
   
   def uptime(self):
-    return self.stat() != 'dps' and self._duration / self._cooldown
+    return self._cooldown and self.stat() != 'dps' and self._duration / self._cooldown or 0
   
   def total(self,gear,haste):
     if self.equipped(gear):
@@ -117,6 +116,10 @@ class ScopeProc(RPPMProc):
   _magnitude = 750
   _duration = 12
   _rppm = 1.55
+  
+  def __init__(self,stat=None):
+    if stat:
+      self._stat=stat
   
   def stat(self):
     if self._stat in ('crit','mastery','multistrike'):

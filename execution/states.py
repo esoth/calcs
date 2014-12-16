@@ -254,7 +254,7 @@ class FocusFireState(State):
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._time_modifier = states['Frenzy']._last_max * .06 + 1
-      self._ap_modifier = states['Frenzy']._last_max * .02 + 1
+      self._ap_modifier = states['Frenzy']._last_max * .05 + 1
       self._duration = spells.FocusFire(self.hunter).duration()
     else:
       self._duration -= time
