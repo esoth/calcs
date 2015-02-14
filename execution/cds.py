@@ -60,6 +60,8 @@ class ExplosiveShotCD(Cooldown):
     from calcs.spells import ExplosiveShot
     if actionid == self.actionid and not states['Lock and Load']._stacks >= 0:
       self.cdtime = ExplosiveShot(self.hunter).cd()
+    elif states['Lock and Load']._stacks >= 0:
+      self.cdtime = 0
     self.cdtime -= time
      
 class ArcaneTorrentCD(Cooldown):

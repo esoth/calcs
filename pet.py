@@ -32,7 +32,7 @@ class Pet(object):
   def base(self,hunter,states={}):
     ap = self.ap(hunter)
     if states and states['Focus Fire'].active():
-      ap *= 1.1
+      ap *= 1.25
     dmg = ap/3.5*2 # 100% weapon damage
     return dmg
 

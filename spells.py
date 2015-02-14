@@ -6,7 +6,7 @@ from stats import Calc
 
 GCD = 1
 
-hotfixes = {'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
+hotfixes = {#'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Cobra Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Explosive Trap': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Kill Shot': 1.15*(1/1.10), # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
@@ -15,14 +15,13 @@ hotfixes = {'Arcane Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/163
           'Aimed Shot': 1.15*(1/1.10), # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Black Arrow': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Explosive Shot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
-          'Glaive Toss': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Powershot': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Poisoned Ammo (Exotic Munitions)': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Incendiary Ammo (Exotic Munitions)': 1.15, # Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Kill Command': 1.2, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
           'Chimera Shot': 1.15*(1/1.13), # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014 Oct 17 - http://us.battle.net/wow/en/blog/16370024/
           'Focusing Shot': 1.25, # Oct 30 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-november-15-11-15-2014
-          'Serpent Sting': 1.6, # Dec 15 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-december-5-12-5-2014
+          #'Serpent Sting': 1.6, # Dec 15 - http://us.battle.net/wow/en/blog/16561637/603-hotfixes-december-5-12-5-2014
   }
 
 class Spell(Calc):
@@ -30,7 +29,6 @@ class Spell(Calc):
   _ap = 0.0 # a coefficient
   _critchance = 0 # in addition to base crit, such as from a spell
   _armor = 0 # mitigating modifier
-  _buff = 0 # probably either physical or magical
   _casttime = GCD
   _spec = 0 # any special modifier
   _focus = 0 # focus cost
@@ -38,10 +36,6 @@ class Spell(Calc):
   _cd = 0
   _duration = 0
   _aoe = 0 # other targets take this percent
-  
-  def hotfix(self):
-    """ Oct 17/30. Hotfixes do not show up in the client data so you want see them in things like wowhead data """
-    return hotfixes.get(self.name,1.0)
 
   def weapon(self):
     return self._weapon
@@ -51,8 +45,6 @@ class Spell(Calc):
     return self._critchance
   def armor(self):
     return self._armor
-  def buff(self):
-    return self._buff
   def spec(self):
     return self._spec
   def focus(self):
@@ -70,12 +62,10 @@ class Spell(Calc):
     _attributes = []
     _attributeslist = (('weapon','Weapon co.'),
                        ('ap','AP co.'),
-                       ('hotfix','Hotfixes'),
                        ('base','Base damage'),
                        ('totalcritmod','Crit'),
                        ('armor','Armor mit.'),
                        ('mastery','Mastery'),
-                       ('buff','Buff'),
                        ('spec','Spec. based mod.'),
                        ('versatility','Versatility'),
                        ('multistrike','Multistrike'),
@@ -87,7 +77,7 @@ class Spell(Calc):
                        ('regular_hit','Regular hit'))
 
     for attrid,attrtitle in _attributeslist:
-      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','buff','spec','perk','versatility','multistrike','hotfix')
+      to_pretty = ('weapon','ap','totalcritmod','mastery','armor','spec','perk','versatility','multistrike',)
       to_double = ('speed','base','damage','dps','regular_hit',)
       func = getattr(self,attrid)
       value = getattr(self,attrid)()
@@ -116,17 +106,22 @@ class Spell(Calc):
     """ Must be initiated with a hunter object """
     self.hunter = hunter
 
-  def base(self,ap=1):
+  def base(self,ap=1,states={}):
     """ Base damage from AP and/or Weapon """
-    return self.hunter.weapondmg(ap=ap) * self.weapon() + ap * self.hunter.ap() * self.ap()
+    archmage = states.get("Archmage's Incandescence") and states["Archmage's Incandescence"].active() and 1.1 or 1
+    return self.hunter.weapondmg(ap=ap,archmage=archmage) * self.weapon() + ap * self.hunter.ap(archmage) * self.ap()
 
-  def multistrike(self):
+  def multistrike(self,states={}):
     """ Two independent chances to do 30% damage = dmg * (1 +.6 * multi) """
-    # v + 2*v*m*.3
-    # v + .6*vm
-    # v(1+.6m)
+    #v + 2*v*m*(.3+msbonus)
+    #v + .6*v*m*+2*v*m*msbonus
+    #v*(1+ .6*m + 2*m*msbonus)
+    
     mchance = self.hunter.multistrike.total()/100.0
-    return 1+(self.hunter.meta.spec == SV and .8 or .6)*mchance
+    mbonus = self.hunter.meta.spec == SV and .2 or 0
+    if self.hunter.meta.spec == SV and self.hunter.rylakstalker4() and states and states['Rylakstalker\'s SV 4pc']:
+      mbonus += .15
+    return 1+.6*mchance+2*mchance*mbonus
 
   def casttime(self):
     if self._casttime == 0:
@@ -157,11 +152,9 @@ class Spell(Calc):
 
   def damage(self, states={}):
     ap = states and states['Focus Fire'].active() and states['Focus Fire'].ap_modifier() or 1
-    dmg = self.base(ap) * self.totalcritmod(states) * self.hotfix()
+    dmg = self.base(ap,states) * self.totalcritmod(states)
     if self.armor():
       dmg = dmg * self.armor()
-    if self.buff():
-      dmg = dmg * self.buff()
     if self.mastery():
       dmg = dmg * self.mastery()
     if self.spec():
@@ -174,8 +167,8 @@ class Spell(Calc):
       dmg = dmg * self.lone()
     if self.versatility():
       dmg = dmg * self.versatility()
-    if self.multistrike():
-      dmg = dmg * self.multistrike()
+    if self.multistrike(states):
+      dmg = dmg * self.multistrike(states)
 
     return dmg
 
@@ -184,8 +177,6 @@ class Spell(Calc):
     dmg = self.base()
     if self.armor():
       dmg = dmg * self.armor()
-    if self.buff():
-      dmg = dmg * self.buff()
     if self.mastery():
       dmg = dmg * self.mastery()
     if self.spec():
@@ -234,19 +225,9 @@ class Spell(Calc):
 
 class PhysicalSpell(Spell):
   _armor = armormod()
-  _buff = 1.05
-
-  def buff(self):
-    """ Physical vulnerability debuff """
-    return super(PhysicalSpell,self).buff()
 
 class MagicSpell(Spell):
   """ Magic Damage for Survival mastery """
-  _buff = 1.05
-
-  def buff(self):
-    """ Magic vulnerability debuff """
-    return super(MagicSpell,self).buff()
 
   def mastery(self):
     """ Sniper training for MM, Magic damage for SV """
@@ -314,8 +295,6 @@ class TouchOfTheGrave(MagicSpell):
   def damage(self, states={}):
     """ Unknown proc rate. Set to 30s for now """
     dmg = (1932+2244)/2
-    if self.buff():
-      dmg = dmg * self.buff()
     if self.mastery():
       dmg = dmg * self.mastery()
     if self.lone():
@@ -407,7 +386,7 @@ class IncendiaryAmmo(MagicSpell):
 class ArcaneShot(MagicSpell):
   computable = True
   name = "Arcane Shot"
-  _weapon = 1.1
+  _weapon = 1.25
   _casttime = GCD
   _focus = 30
 
@@ -422,7 +401,7 @@ class BlackArrow(MagicSpell):
   _ap = 4.4
   _casttime = GCD
   _focus = 35
-  _cd = 30
+  _cd = 24
   _spec = 1.3
   _duration = 20
 
@@ -532,7 +511,7 @@ class MultiShot(PhysicalSpell):
 class SerpentSting(MagicSpell):
   computable = True
   name = "Serpent Sting"
-  _ap = 1.76
+  _ap = 3.625
   _duration = 15
 
   def instant(self):
@@ -586,7 +565,7 @@ class GlaiveToss(PhysicalSpell):
   computable = True
   name = "Glaive Toss"
   _focus = 15
-  _ap = .361 * 4 * 2
+  _ap = .415 * 4 * 2
   _cd = 15
   _aoe = .25
 
@@ -600,7 +579,7 @@ class Barrage(PhysicalSpell):
   _cd = 20
   _focus = 60
   _casttime = 3
-  _weapon = 9.6
+  _weapon = 10.5
   _aoe = .25
 
   def casttime(self):

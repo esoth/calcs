@@ -86,6 +86,14 @@ class SkullOfWar(OnUseProc):
   _magnitude = 1272
   _duration = 20
   _cooldown = 115
+
+class LuckyDoubleSidedCoin(OnUseProc):
+  """ Lucky Double-Sided Coin """
+  _stat = 'agility'
+  _gear = 118876
+  _magnitude = 1467
+  _duration = 20
+  _cooldown = 120
   
 class BEM(RPPMProc):
   """ Blackheart Enforcer's Medallion """
@@ -137,6 +145,15 @@ class ScalesOfDoom(RPPMProc):
   _magnitude = 1743
   _duration = 10
   _rppm = 0.92
+  
+class ArchmagesIncandescence(RPPMProc):
+  """ Archmage's Incandescence (see states section) """
+  _stat = 'agility'
+  _gear = 118302
+  _magnitude = 0
+  _magnifier = 1.1
+  _duration = 10
+  _rppm = .92
       
 def proc_info(gear,haste,enchantstat):
   info = {}

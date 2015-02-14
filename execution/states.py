@@ -204,13 +204,36 @@ class LockAndLoadState(State):
   # going to need a class of procs to pass here
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     lnl = states['Lock and Load (proc)']
-    if lnl.active():
+    if lnl.active() or (self.hunter.rylakstalker2() and actionid == 'Black Arrow'):
       self._stacks = 2
     elif actionid == 'Explosive Shot':
       self._stacks -= 1
 
   def active(self):
     return self.stacks()
+  
+class ArchmagesIncandescence(State):
+  """ Archmage's Incandescence """
+  computable = True
+  state_id = "Archmage's Incandescence"
+  _active = False
+  _counter = 3
+  _duration = 0
+  
+  def equipped(self):
+    return 118302 in [i['id'] for i in self.hunter.equipped]
+  
+  def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
+    if self._counter <= 0: # reset
+      self._counter = 60 * .92
+      self._duration = 10
+    elif self.duration(): # lower duration
+      self._duration -= time
+    elif self.equipped(): # progress counter
+      self._counter -= time
+    
+  def active(self):
+    return self.equipped() and self.duration()
 
 class RapidFire(State):
   computable = True
@@ -238,7 +261,7 @@ class FocusFireState(State):
   computable = True
   state_id = 'Focus Fire'
   _time_modifier = 1.3
-  _ap_modifier = 1.1
+  _ap_modifier = 1.25
   _active = False
   _duration = 0
 
@@ -330,6 +353,20 @@ class ExplosiveTrapState(State):
   def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
     if actionid == self.state_id:
       self._duration = spells.ExplosiveTrap(self.hunter).duration()
+    else:
+      self._duration -= time
+
+  def active(self):
+    return self.duration() > 0
+
+class RylakSV4pc(State):
+  computable = True
+  state_id = 'Rylakstalker\'s SV 4pc'
+  _duration = 0
+
+  def update_state(self,time,actionid,states,pet_basic,boss_health,focus_costs):
+    if actionid == 'Explosive Shot' and self.hunter.rylakstalker4():
+      self._duration += max(self._duration,0) + 3
     else:
       self._duration -= time
 

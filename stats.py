@@ -181,7 +181,7 @@ class CritStat(Stat):
 
 class HasteStat(Stat):
   """ 5% haste buff """
-  _rating = 100
+  _rating = 90
   _buff = 5
 
   def food(self):
@@ -228,7 +228,7 @@ class MasteryStat(Stat):
 
   def rating(self):
     if self.hunter.spec == 0:
-      return 55.0
+      return 55.0/1.125
     elif self.hunter.spec == 1:
       return 220.0
     else:
@@ -236,7 +236,7 @@ class MasteryStat(Stat):
 
   def base(self):
     if self.hunter.spec == 0:
-      return 16
+      return 16*1.125 # (18%)
     elif self.hunter.spec == 1:
       return 4
     else:

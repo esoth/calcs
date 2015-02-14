@@ -387,6 +387,7 @@ class SVArcaneSpecialCondition(Condition):
 
     steady_focus = self.hunter.meta.talent4 == TIER4.index(STEADYFOCUS) and states['Steady Focus']._timer < 3
     steady_focus = steady_focus and self.hunter.meta.talent7 != TIER7.index(FOCUSINGSHOT) and focus < 70
+    focusing = self.hunter.meta.talent7 == TIER7.index(FOCUSINGSHOT) # don't ever save focus if focusing shot selected
 
     # if fervor is up in one GCD, assume we exhaust current focus
     fervor = False #cds['Fervor'].cdtime <= 1 and self.hunter.meta.talent4 == 0
@@ -395,8 +396,8 @@ class SVArcaneSpecialCondition(Condition):
 
     checks = [not steady_focus,
               br_check or fervor,
-              spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or fervor,
-              spell_check(self.hunter,es,'Explosive Shot',focus,arc_cost,cds,states) or fervor,
+              spell_check(self.hunter,ba,'Black Arrow',focus,arc_cost,cds,states) or focusing,
+              spell_check(self.hunter,es,'Explosive Shot',focus,arc_cost,cds,states) or focusing,
               amoc_check or fervor]
     return False not in checks
 
@@ -429,6 +430,15 @@ class MMAimedSpecialCondition(Condition):
               br_check or fervor,
               amoc_check or fervor]
     return False not in checks
+
+class LevelOHCondition(Condition):
+  """ No level 100 talent usage, if this condition is checked """
+  title = "Hold Bestial Wrath for Kill Command"
+  id = '1H'
+  computable = True
+
+  def validate(self, cds, states, focus, time):
+    return not self.options['sv1']
 
 class BWHoldCondition(Condition):
   """ The purpose here is to guarantee we get two KCs during BW """

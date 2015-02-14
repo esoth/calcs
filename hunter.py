@@ -122,17 +122,17 @@ class Hunter(object):
       if isinstance(getattr(self,k),Stat):
         getattr(self,k).gear(v)
 
-  def weapondmg(self,normalize=True,ap=1):
+  def weapondmg(self,normalize=True,ap=1,archmage=1):
     """ Weapon damage is average of weapon's min and max, plus AP/3.5 * Weapon Speed """
     wpn = (self.weaponmin + self.weaponmax) / 2.0
     # ap parameter is bonus ap, probably from Improved Focus Fire
-    ap = self.ap() * ap / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
+    ap = self.ap(archmage) * ap / 3.5 * (normalize and 2.8 or self.weaponspeed) # "Attack Power now increases Weapon Damage at a rate of 1 DPS per 3.5 Attack Power"
     return wpn + ap
 
-  def ap(self):
+  def ap(self,archmage=1):
     """ 10% AP buff """
     orc = self.meta.race == ORC and orc_ap()
-    return (self.agility.total()+orc)*1.10
+    return ((self.agility.total()+orc)*archmage)*1.10
 
   def focus_gen(self):
     """ Base focus generation - 4 * haste """
